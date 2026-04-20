@@ -51,3 +51,6 @@ next-env.d.ts
 # editor
 .vscode/settings.json
 .idea/
+
+# prettier
+.prettierrc
