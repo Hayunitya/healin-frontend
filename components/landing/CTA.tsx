@@ -1,3 +1,7 @@
+"use client";
+
+import Link from "next/link";
+
 export default function CTA() {
   return (
     <section className="bg-white px-6 py-24">
@@ -13,9 +17,13 @@ export default function CTA() {
             temukan dukungan yang Anda butuhkan.
           </p>
 
-          <button className="mt-12 rounded-full bg-white px-10 py-4 text-lg font-semibold text-blue-500 shadow-xl transition hover:scale-105 hover:bg-blue-50">
-            Mulai Chat
-          </button>
+            <Link
+              href="/login"
+              className="inline-block mt-12 rounded-full bg-white px-10 py-4 text-lg font-semibold text-blue-500 shadow-xl transition hover:scale-105 hover:bg-blue-50"
+            >
+              Mulai Chat
+            </Link>
+
         </div>
       </div>
     </section>
