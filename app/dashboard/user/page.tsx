@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAnonymousStore } from "@/store/anonymousStore";
 import {
   closeSession,
@@ -20,6 +21,7 @@ const TOPICS = [
 ];
 
 export default function UserDashboardPage() {
+  const router = useRouter();
   const { profile, isAnonymousActive } = useAnonymousStore();
   const [selectedTopic, setSelectedTopic] = useState(TOPICS[0]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -27,6 +29,7 @@ export default function UserDashboardPage() {
   const [creating, setCreating] = useState(false);
   const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const redirectedSessionRef = useRef<string | null>(null);
 
   const userId = profile?.anonymousUserId;
 
@@ -70,6 +73,13 @@ export default function UserDashboardPage() {
     () => sessions.filter((session) => session.status === "waiting").length,
     [sessions]
   );
+  const latestMatchedOpenSession = useMemo(
+    () =>
+      sessions.find(
+        (session) => session.status === "matched" && session.closed_at === null
+      ) ?? null,
+    [sessions]
+  );
 
   const handleCloseSession = async (sessionId: string) => {
     try {
@@ -83,6 +93,22 @@ export default function UserDashboardPage() {
       setClosingSessionId(null);
     }
   };
+
+  useEffect(() => {
+    if (!userId) return;
+    const interval = setInterval(() => {
+      loadSessions();
+    }, 5000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  useEffect(() => {
+    if (!latestMatchedOpenSession) return;
+    if (redirectedSessionRef.current === latestMatchedOpenSession.id) return;
+    redirectedSessionRef.current = latestMatchedOpenSession.id;
+    router.push(`/chat/${latestMatchedOpenSession.id}?role=user`);
+  }, [latestMatchedOpenSession, router]);
 
   if (!isAnonymousActive || !profile) {
     return (
@@ -165,6 +191,11 @@ export default function UserDashboardPage() {
             </button>
           </div>
           {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+          {latestMatchedOpenSession ? (
+            <p className="mt-3 text-sm text-emerald-700">
+              Counselor sudah mengambil session. Kamu akan diarahkan ke ruang chat.
+            </p>
+          ) : null}
           <div className="mt-5 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>

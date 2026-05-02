@@ -5,12 +5,11 @@ import Link from "next/link";
 import {
   assignSession,
   closeSession,
-  getSessionsByUser,
+  getWaitingSessions,
   type SessionRecord,
 } from "@/lib/services/sessions";
 
 export default function CounselorDashboardPage() {
-  const [lookupUserId, setLookupUserId] = useState("");
   const [counselorId, setCounselorId] = useState(() => {
     if (typeof window === "undefined") return "";
     return localStorage.getItem("healin_counselor_id") ?? "";
@@ -26,15 +25,10 @@ export default function CounselorDashboardPage() {
   };
 
   const handleLoadSessions = async () => {
-    if (!lookupUserId.trim()) {
-      setError("Masukkan user_id untuk melihat queue session user tersebut.");
-      return;
-    }
-
     try {
       setError("");
       setLoading(true);
-      const data = await getSessionsByUser(lookupUserId.trim());
+      const data = await getWaitingSessions();
       setSessions(data);
     } catch {
       setError("Gagal mengambil data session.");
@@ -102,13 +96,10 @@ export default function CounselorDashboardPage() {
           </div>
 
           <div className="rounded-3xl bg-white p-8 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
-            <label className="mb-2 block text-sm font-medium text-gray-700">Lookup User ID</label>
-            <input
-              value={lookupUserId}
-              onChange={(e) => setLookupUserId(e.target.value)}
-              placeholder="UUID anonymous user"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 p-4 outline-none transition focus:border-blue-500"
-            />
+            <p className="text-sm font-medium text-gray-700">Global Waiting Queue</p>
+            <p className="mt-2 text-sm text-gray-600">
+              Menampilkan semua session dengan status waiting dari dummy storage.
+            </p>
             <button
               onClick={handleLoadSessions}
               className="mt-4 rounded-xl bg-blue-500 px-5 py-2 font-medium text-white transition hover:bg-blue-600"

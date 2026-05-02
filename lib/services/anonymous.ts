@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+import { createMockAnonymousUser, getMockAnonymousUserById } from "@/lib/services/mockDb";
 
 export interface CreateAnonymousUserResponse {
   id: string;
@@ -7,6 +7,9 @@ export interface CreateAnonymousUserResponse {
 }
 
 export async function createAnonymousUser() {
-  const response = await api.post<CreateAnonymousUserResponse>("/users/anonymous");
-  return response.data;
+  return createMockAnonymousUser();
+}
+
+export async function findAnonymousUserById(id: string) {
+  return getMockAnonymousUserById(id);
 }

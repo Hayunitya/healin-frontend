@@ -4,14 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAnonymousStore } from "@/store/anonymousStore";
+import { findAnonymousUserById } from "@/lib/services/anonymous";
 
 export default function ContinueAnonymousPage() {
   const router = useRouter();
   const { setAnonymousProfile } = useAnonymousStore();
   const [anonymousUserId, setAnonymousUserId] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleContinue = (e: React.FormEvent) => {
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!anonymousUserId.trim()) {
@@ -19,9 +21,18 @@ export default function ContinueAnonymousPage() {
       return;
     }
 
+    setLoading(true);
+    const user = await findAnonymousUserById(anonymousUserId.trim());
+    setLoading(false);
+    if (!user) {
+      setError("ID tidak ditemukan. Pastikan Anonymous User ID benar.");
+      return;
+    }
+
     setAnonymousProfile({
-      anonymousUserId: anonymousUserId.trim(),
-      anonymousHandle: "RecoveredUser",
+      anonymousUserId: user.id,
+      anonymousHandle: user.anon_handle,
+      createdAt: user.created_at,
     });
     router.push("/dashboard/user");
   };
@@ -51,8 +62,11 @@ export default function ContinueAnonymousPage() {
           {error ? <p className="mt-2 text-sm text-red-500">{error}</p> : null}
         </div>
 
-        <button className="w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600">
-          Continue
+        <button
+          disabled={loading}
+          className="w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+        >
+          {loading ? "Checking..." : "Continue"}
         </button>
       </form>
     </AuthLayout>

@@ -1,0 +1,182 @@
+export type MockSessionStatus = "waiting" | "matched" | "closed";
+
+export interface MockAnonymousUser {
+  id: string;
+  anon_handle: string;
+  created_at: string;
+}
+
+export interface MockSession {
+  id: string;
+  user_id: string;
+  counselor_id: string | null;
+  topic: string | null;
+  status: MockSessionStatus;
+  created_at: string;
+  matched_at: string | null;
+  closed_at: string | null;
+}
+
+export interface MockMessage {
+  id: string;
+  session_id: string;
+  sender: "user" | "counselor" | "system";
+  body: string;
+  created_at: string;
+  risk_level: string | null;
+  risk_score: number | null;
+  risk_reason: string | null;
+}
+
+interface MockDbSchema {
+  users: MockAnonymousUser[];
+  sessions: MockSession[];
+  messages: MockMessage[];
+}
+
+const DB_KEY = "healin_mock_db_v1";
+
+const RISK_KEYWORDS = ["bunuh diri", "self-harm", "mati", "kill myself", "hopeless"];
+
+function readDb(): MockDbSchema {
+  if (typeof window === "undefined") {
+    return { users: [], sessions: [], messages: [] };
+  }
+
+  const raw = localStorage.getItem(DB_KEY);
+  if (!raw) {
+    const initial = { users: [], sessions: [], messages: [] };
+    localStorage.setItem(DB_KEY, JSON.stringify(initial));
+    return initial;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as MockDbSchema;
+    return {
+      users: parsed.users ?? [],
+      sessions: parsed.sessions ?? [],
+      messages: parsed.messages ?? [],
+    };
+  } catch {
+    const reset = { users: [], sessions: [], messages: [] };
+    localStorage.setItem(DB_KEY, JSON.stringify(reset));
+    return reset;
+  }
+}
+
+function writeDb(db: MockDbSchema) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+function uid(prefix: string) {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createMockAnonymousUser() {
+  const db = readDb();
+  const user: MockAnonymousUser = {
+    id: uid("usr"),
+    anon_handle: `anon_${Math.random().toString(36).slice(2, 8)}`,
+    created_at: new Date().toISOString(),
+  };
+  db.users.unshift(user);
+  writeDb(db);
+  return user;
+}
+
+export function getMockAnonymousUserById(id: string) {
+  const db = readDb();
+  return db.users.find((user) => user.id === id) ?? null;
+}
+
+export function createMockSession(payload: { user_id: string; topic: string }) {
+  const db = readDb();
+  const session: MockSession = {
+    id: uid("ses"),
+    user_id: payload.user_id,
+    counselor_id: null,
+    topic: payload.topic,
+    status: "waiting",
+    created_at: new Date().toISOString(),
+    matched_at: null,
+    closed_at: null,
+  };
+  db.sessions.unshift(session);
+  writeDb(db);
+  return session;
+}
+
+export function getMockSessionsByUser(userId: string) {
+  const db = readDb();
+  return db.sessions
+    .filter((session) => session.user_id === userId)
+    .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+}
+
+export function getMockWaitingSessions() {
+  const db = readDb();
+  return db.sessions
+    .filter((session) => session.status === "waiting")
+    .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+}
+
+export function assignMockSession(sessionId: string, counselorId: string) {
+  const db = readDb();
+  const session = db.sessions.find((item) => item.id === sessionId);
+  if (!session) throw new Error("Session not found");
+  session.counselor_id = counselorId;
+  session.status = "matched";
+  session.matched_at = new Date().toISOString();
+  writeDb(db);
+  return session;
+}
+
+export function closeMockSession(sessionId: string) {
+  const db = readDb();
+  const session = db.sessions.find((item) => item.id === sessionId);
+  if (!session) throw new Error("Session not found");
+  session.status = "closed";
+  session.closed_at = new Date().toISOString();
+  writeDb(db);
+  return session;
+}
+
+function detectMockRisk(body: string) {
+  const lowered = body.toLowerCase();
+  const matched = RISK_KEYWORDS.find((keyword) => lowered.includes(keyword));
+  if (!matched) return null;
+  return { level: "high", score: 0.92, reason: `Detected keyword: ${matched}` };
+}
+
+export function getMockMessages(sessionId: string) {
+  const db = readDb();
+  return db.messages
+    .filter((message) => message.session_id === sessionId)
+    .sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+}
+
+export function createMockMessage(payload: {
+  session_id: string;
+  sender: "user" | "counselor" | "system";
+  body: string;
+}) {
+  const db = readDb();
+  const risk = payload.sender === "user" ? detectMockRisk(payload.body) : null;
+  const message: MockMessage = {
+    id: uid("msg"),
+    session_id: payload.session_id,
+    sender: payload.sender,
+    body: payload.body,
+    created_at: new Date().toISOString(),
+    risk_level: risk?.level ?? null,
+    risk_score: risk?.score ?? null,
+    risk_reason: risk?.reason ?? null,
+  };
+  db.messages.push(message);
+  writeDb(db);
+  return {
+    message,
+    risk_flag: risk,
+  };
+}
