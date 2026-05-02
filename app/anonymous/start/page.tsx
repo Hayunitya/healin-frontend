@@ -4,29 +4,14 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAnonymousStore } from "@/store/anonymousStore";
-
-const handlePool = ["CalmRiver", "BrightSky", "SilentLeaf", "KindEcho"];
-
-function generateAnonymousProfile() {
-  const random = Math.floor(Math.random() * 1000000)
-    .toString()
-    .padStart(6, "0");
-  const randomHandle = `${handlePool[Math.floor(Math.random() * handlePool.length)]}${random.slice(
-    0,
-    3
-  )}`;
-
-  return {
-    anonymousUserId: `ANON-${random}`,
-    anonymousHandle: randomHandle,
-    createdAt: new Date().toISOString(),
-  };
-}
+import { createAnonymousUser } from "@/lib/services/anonymous";
 
 export default function StartAnonymousPage() {
   const router = useRouter();
   const { setAnonymousProfile } = useAnonymousStore();
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const hint = useMemo(
     () =>
@@ -34,10 +19,22 @@ export default function StartAnonymousPage() {
     []
   );
 
-  const handleStart = () => {
-    const profile = generateAnonymousProfile();
-    setAnonymousProfile(profile);
-    setCreatedId(profile.anonymousUserId);
+  const handleStart = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const profile = await createAnonymousUser();
+      setAnonymousProfile({
+        anonymousUserId: profile.id,
+        anonymousHandle: profile.anon_handle,
+        createdAt: profile.created_at,
+      });
+      setCreatedId(profile.id);
+    } catch {
+      setError("Gagal membuat anonymous user. Cek koneksi backend kamu.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const goToDashboard = () => {
@@ -54,9 +51,10 @@ export default function StartAnonymousPage() {
       {!createdId ? (
         <button
           onClick={handleStart}
+          disabled={loading}
           className="mt-8 w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600"
         >
-          Create Anonymous User
+          {loading ? "Creating..." : "Create Anonymous User"}
         </button>
       ) : (
         <div className="mt-8 space-y-4">
@@ -75,6 +73,7 @@ export default function StartAnonymousPage() {
           </button>
         </div>
       )}
+      {error ? <p className="mt-4 text-sm text-red-500">{error}</p> : null}
     </AuthLayout>
   );
 }
