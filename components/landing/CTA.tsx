@@ -17,12 +17,21 @@ export default function CTA() {
             temukan dukungan yang Anda butuhkan.
           </p>
 
+          <div className="mt-12 flex flex-col items-center justify-center gap-4 md:flex-row">
             <Link
-              href="/login"
-              className="inline-block mt-12 rounded-full bg-white px-10 py-4 text-lg font-semibold text-blue-500 shadow-xl transition hover:scale-105 hover:bg-blue-50"
+              href="/anonymous/start"
+              className="inline-block rounded-full bg-white px-10 py-4 text-lg font-semibold text-blue-500 shadow-xl transition hover:scale-105 hover:bg-blue-50"
             >
-              Mulai Chat
+              Start Anonymous Chat
             </Link>
+
+            <Link
+              href="/anonymous/continue"
+              className="inline-block rounded-full border border-white bg-transparent px-10 py-4 text-lg font-semibold text-white transition hover:bg-white/10"
+            >
+              Continue Anonymous Session
+            </Link>
+          </div>
 
         </div>
       </div>

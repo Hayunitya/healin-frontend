@@ -1,53 +1,63 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Routes that require authentication (any role)
-const PROTECTED_ROUTES = ["/dashboard", "/chat", "/session"];
+// Routes that require staff authentication
+const STAFF_PROTECTED_ROUTES = ["/dashboard/counselor", "/admin", "/staff"];
 
 // Routes restricted by role
 const ROLE_ROUTES: Record<string, string[]> = {
-  "/dashboard/user": ["user"],
   "/dashboard/counselor": ["counselor"],
   "/admin": ["admin"],
 };
 
-// Routes only for guests (redirect to dashboard if already logged in)
-const GUEST_ONLY_ROUTES = ["/login", "/register"];
+// Routes only for staff guests
+const STAFF_GUEST_ONLY_ROUTES = ["/staff/login"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Read token from cookie (set during login)
-  const token = request.cookies.get("healin_token")?.value;
+  const token = request.cookies.get("healin_staff_token")?.value;
   const role = request.cookies.get("healin_role")?.value;
 
-  const isAuthenticated = Boolean(token);
+  const isStaffAuthenticated = Boolean(token);
 
-  // Redirect authenticated users away from guest-only pages
-  if (isAuthenticated && GUEST_ONLY_ROUTES.some((r) => pathname.startsWith(r))) {
+  if (
+    isStaffAuthenticated &&
+    STAFF_GUEST_ONLY_ROUTES.some((r) => pathname.startsWith(r))
+  ) {
     const dashboardPath =
       role === "admin"
         ? "/admin"
         : role === "counselor"
         ? "/dashboard/counselor"
-        : "/dashboard/user";
+        : "/staff/login";
     return NextResponse.redirect(new URL(dashboardPath, request.url));
   }
 
-  // Redirect unauthenticated users away from protected pages
-  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+  // Anonymous-user routes are public.
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/anonymous") ||
+    pathname.startsWith("/dashboard/user") ||
+    pathname.startsWith("/chat")
+  ) {
+    return NextResponse.next();
+  }
+
+  const isProtected = STAFF_PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
   const isRoleProtected = Object.keys(ROLE_ROUTES).some((r) =>
     pathname.startsWith(r)
   );
 
-  if ((isProtected || isRoleProtected) && !isAuthenticated) {
-    const loginUrl = new URL("/login", request.url);
+  if ((isProtected || isRoleProtected) && !isStaffAuthenticated) {
+    const loginUrl = new URL("/staff/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // Check role-based access
-  if (isAuthenticated && role) {
+  if (isStaffAuthenticated && role) {
     for (const [route, allowedRoles] of Object.entries(ROLE_ROUTES)) {
       if (pathname.startsWith(route) && !allowedRoles.includes(role)) {
         return NextResponse.redirect(new URL("/unauthorized", request.url));

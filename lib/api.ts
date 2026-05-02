@@ -8,11 +8,11 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Request interceptor — attach JWT token from localStorage
+// Attach staff JWT token. Anonymous user flow should send id/handle payload directly.
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("healin_token");
+      const token = localStorage.getItem("healin_staff_token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -22,15 +22,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor — handle 401 (token expired)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("healin_token");
-        window.location.href = "/login";
-      }
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("healin_staff_token");
+      window.location.href = "/staff/login";
     }
     return Promise.reject(error);
   }
