@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -83,6 +84,13 @@ export default function StaffLoginPage() {
           Log In
         </button>
       </form>
+
+      <p className="mt-5 text-center text-sm text-gray-600">
+        Belum punya akun counselor?{" "}
+        <Link href="/staff/register" className="font-semibold text-blue-600 hover:text-blue-700">
+          Register
+        </Link>
+      </p>
     </AuthLayout>
   );
 }

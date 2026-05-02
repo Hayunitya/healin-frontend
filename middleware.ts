@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Routes that require staff authentication
-const STAFF_PROTECTED_ROUTES = ["/dashboard/counselor", "/admin", "/staff"];
+const STAFF_PROTECTED_ROUTES = ["/dashboard/counselor", "/admin"];
 
 // Routes restricted by role
 const ROLE_ROUTES: Record<string, string[]> = {
@@ -11,7 +11,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
 };
 
 // Routes only for staff guests
-const STAFF_GUEST_ONLY_ROUTES = ["/staff/login"];
+const STAFF_GUEST_ONLY_ROUTES = ["/staff/login", "/staff/register"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -38,6 +38,7 @@ export function middleware(request: NextRequest) {
   // Anonymous-user routes are public.
   if (
     pathname === "/" ||
+    pathname === "/login" ||
     pathname.startsWith("/anonymous") ||
     pathname.startsWith("/dashboard/user") ||
     pathname.startsWith("/chat")

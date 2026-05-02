@@ -10,20 +10,12 @@ export default function Navbar() {
           Heal.in
         </Link>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/anonymous/start"
-            className="rounded-full border border-blue-500 px-5 py-2 text-sm text-blue-500 transition hover:bg-blue-50"
-          >
-            Start Anon
-          </Link>
-          <Link
-            href="/staff/login"
-            className="rounded-full bg-blue-500 px-5 py-2 text-sm text-white transition hover:bg-blue-600"
-          >
-            Staff Log In
-          </Link>
-        </div>
+        <Link
+          href="/login"
+          className="rounded-full bg-blue-500 px-5 py-2 text-sm text-white transition hover:bg-blue-600"
+        >
+          Login
+        </Link>
       </div>
     </nav>
   );

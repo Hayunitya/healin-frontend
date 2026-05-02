@@ -8,8 +8,8 @@ import { createAnonymousUser } from "@/lib/services/anonymous";
 
 export default function StartAnonymousPage() {
   const router = useRouter();
-  const { setAnonymousProfile } = useAnonymousStore();
-  const [createdId, setCreatedId] = useState<string | null>(null);
+  const { profile, setAnonymousProfile } = useAnonymousStore();
+  const [createdId, setCreatedId] = useState<string | null>(profile?.anonymousUserId ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

@@ -19,12 +19,18 @@ export const useStaffAuthStore = create<StaffAuthState>()(
       setStaffAuth: (staff, token) => {
         if (typeof window !== "undefined") {
           localStorage.setItem("healin_staff_token", token);
+          document.cookie = `healin_staff_token=${token}; path=/`;
+          document.cookie = `healin_role=${staff.role}; path=/`;
         }
         set({ staff, token, isAuthenticated: true });
       },
       clearStaffAuth: () => {
         if (typeof window !== "undefined") {
           localStorage.removeItem("healin_staff_token");
+          document.cookie =
+            "healin_staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "healin_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         }
         set({ staff: null, token: null, isAuthenticated: false });
       },
