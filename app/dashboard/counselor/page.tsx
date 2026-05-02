@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import AppNavbar from "@/components/navigation/AppNavbar";
+import { useStaffAuthStore } from "@/store/staffAuthStore";
 import {
   assignSession,
   closeSession,
@@ -10,6 +13,8 @@ import {
 } from "@/lib/services/sessions";
 
 export default function CounselorDashboardPage() {
+  const router = useRouter();
+  const { staff, clearStaffAuth } = useStaffAuthStore();
   const [counselorId, setCounselorId] = useState(() => {
     if (typeof window === "undefined") return "";
     return localStorage.getItem("healin_counselor_id") ?? "";
@@ -69,8 +74,22 @@ export default function CounselorDashboardPage() {
   };
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-[#edf4ff] to-white px-6 py-12">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="min-h-screen bg-linear-to-b from-[#edf4ff] to-white">
+      <AppNavbar
+        title="Counselor Dashboard"
+        subtitle="Kelola waiting queue dan ambil session"
+        roleLabel="Counselor"
+        identityLabel={counselorId || staff?.username || "Counselor belum diatur"}
+        links={[
+          { label: "Dashboard", href: "/dashboard/counselor" },
+          { label: "Staff Login", href: "/staff/login" },
+        ]}
+        onLogout={() => {
+          clearStaffAuth();
+          router.push("/login");
+        }}
+      />
+      <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
         <section className="rounded-3xl bg-white p-8 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
           <h1 className="text-3xl font-bold text-gray-900">Counselor Dashboard</h1>
           <p className="mt-2 text-gray-600">
@@ -161,6 +180,17 @@ export default function CounselorDashboardPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+          <h2 className="text-lg font-bold text-slate-900">Akun & Setting</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Simpan counselor ID untuk proses assign session.
+          </p>
+          <div className="mt-4 rounded-xl bg-white p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Counselor ID</p>
+            <p className="mt-1 font-mono text-sm text-slate-800">{counselorId || "-"}</p>
           </div>
         </section>
       </div>

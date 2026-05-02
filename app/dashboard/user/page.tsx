@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAnonymousStore } from "@/store/anonymousStore";
+import AppNavbar from "@/components/navigation/AppNavbar";
 import {
   closeSession,
   createSession,
@@ -22,7 +23,7 @@ const TOPICS = [
 
 export default function UserDashboardPage() {
   const router = useRouter();
-  const { profile, isAnonymousActive } = useAnonymousStore();
+  const { profile, isAnonymousActive, clearAnonymousProfile } = useAnonymousStore();
   const [selectedTopic, setSelectedTopic] = useState(TOPICS[0]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
@@ -130,8 +131,22 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-[#edf4ff] to-white px-6 py-12">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="min-h-screen bg-linear-to-b from-[#edf4ff] to-white">
+      <AppNavbar
+        title="User Dashboard"
+        subtitle="Kelola konsultasi anonim kamu"
+        roleLabel="Anonymous User"
+        identityLabel={`${profile.anonymousHandle} • ${profile.anonymousUserId}`}
+        links={[
+          { label: "Dashboard", href: "/dashboard/user" },
+          { label: "Start New ID", href: "/anonymous/start" },
+        ]}
+        onLogout={() => {
+          clearAnonymousProfile();
+          router.push("/login");
+        }}
+      />
+      <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
         <section className="rounded-3xl bg-white p-8 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Anonymous User</p>
           <h1 className="mt-2 text-3xl font-bold text-gray-900">{profile.anonymousHandle}</h1>
@@ -242,6 +257,21 @@ export default function UserDashboardPage() {
             {!loadingSessions && sessions.length === 0 ? (
               <p className="py-6 text-center text-gray-500">Belum ada session.</p>
             ) : null}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+          <h2 className="text-lg font-bold text-slate-900">Akun & Setting</h2>
+          <p className="mt-2 text-sm text-slate-600">Gunakan data ini untuk melanjutkan session di lain waktu.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl bg-white p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Anonymous ID</p>
+              <p className="mt-1 font-mono text-sm text-slate-800">{profile.anonymousUserId}</p>
+            </div>
+            <div className="rounded-xl bg-white p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Handle</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800">{profile.anonymousHandle}</p>
+            </div>
           </div>
         </section>
       </div>

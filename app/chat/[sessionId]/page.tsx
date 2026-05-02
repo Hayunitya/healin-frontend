@@ -2,14 +2,20 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getMessages, sendMessage, type SessionMessage } from "@/lib/services/sessions";
+import AppNavbar from "@/components/navigation/AppNavbar";
+import { useAnonymousStore } from "@/store/anonymousStore";
+import { useStaffAuthStore } from "@/store/staffAuthStore";
 
 export default function SessionChatPage() {
+  const router = useRouter();
   const params = useParams<{ sessionId: string }>();
   const searchParams = useSearchParams();
   const sessionId = params.sessionId;
   const role = (searchParams.get("role") as "user" | "counselor") ?? "user";
+  const { profile, clearAnonymousProfile } = useAnonymousStore();
+  const { staff, clearStaffAuth } = useStaffAuthStore();
   const [messages, setMessages] = useState<SessionMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,8 +67,32 @@ export default function SessionChatPage() {
   };
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-[#edf4ff] to-white px-6 py-10">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <main className="min-h-screen bg-linear-to-b from-[#edf4ff] to-white">
+      <AppNavbar
+        title="Session Chat"
+        subtitle={sessionId}
+        roleLabel={role === "counselor" ? "Counselor" : "Anonymous User"}
+        identityLabel={
+          role === "counselor"
+            ? staff?.username || "Counselor"
+            : `${profile?.anonymousHandle ?? "User"} • ${profile?.anonymousUserId ?? "-"}`
+        }
+        links={[
+          {
+            label: role === "counselor" ? "Counselor Dashboard" : "User Dashboard",
+            href: role === "counselor" ? "/dashboard/counselor" : "/dashboard/user",
+          },
+        ]}
+        onLogout={() => {
+          if (role === "counselor") {
+            clearStaffAuth();
+          } else {
+            clearAnonymousProfile();
+          }
+          router.push("/login");
+        }}
+      />
+      <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
         <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
