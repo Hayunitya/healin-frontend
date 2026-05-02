@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAnonymousStore } from "@/store/anonymousStore";
-import { createSession, getSessionsByUser, type SessionRecord } from "@/lib/services/sessions";
+import {
+  closeSession,
+  createSession,
+  getSessionsByUser,
+  type SessionRecord,
+} from "@/lib/services/sessions";
 
 const TOPICS = [
   "Anxiety",
@@ -20,6 +25,7 @@ export default function UserDashboardPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const userId = profile?.anonymousUserId;
@@ -64,6 +70,19 @@ export default function UserDashboardPage() {
     () => sessions.filter((session) => session.status === "waiting").length,
     [sessions]
   );
+
+  const handleCloseSession = async (sessionId: string) => {
+    try {
+      setError("");
+      setClosingSessionId(sessionId);
+      await closeSession(sessionId);
+      await loadSessions();
+    } catch {
+      setError("Gagal menutup session.");
+    } finally {
+      setClosingSessionId(null);
+    }
+  };
 
   if (!isAnonymousActive || !profile) {
     return (
@@ -154,6 +173,7 @@ export default function UserDashboardPage() {
                   <th className="py-3">Topic</th>
                   <th className="py-3">Status</th>
                   <th className="py-3">Created</th>
+                  <th className="py-3">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,6 +184,25 @@ export default function UserDashboardPage() {
                     <td className="py-3 capitalize text-gray-800">{session.status}</td>
                     <td className="py-3 text-gray-600">
                       {new Date(session.created_at).toLocaleString("id-ID")}
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/chat/${session.id}?role=user`}
+                          className="rounded-lg bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-600"
+                        >
+                          Open Chat
+                        </Link>
+                        {session.status !== "closed" ? (
+                          <button
+                            onClick={() => handleCloseSession(session.id)}
+                            disabled={closingSessionId === session.id}
+                            className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                          >
+                            {closingSessionId === session.id ? "Closing..." : "Close"}
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}

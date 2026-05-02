@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { assignSession, getSessionsByUser, type SessionRecord } from "@/lib/services/sessions";
+import Link from "next/link";
+import {
+  assignSession,
+  closeSession,
+  getSessionsByUser,
+  type SessionRecord,
+} from "@/lib/services/sessions";
 
 export default function CounselorDashboardPage() {
   const [lookupUserId, setLookupUserId] = useState("");
@@ -12,6 +18,7 @@ export default function CounselorDashboardPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [assigningSessionId, setAssigningSessionId] = useState<string | null>(null);
+  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const handleSaveCounselorId = () => {
@@ -51,6 +58,19 @@ export default function CounselorDashboardPage() {
       setError("Gagal assign session.");
     } finally {
       setAssigningSessionId(null);
+    }
+  };
+
+  const handleClose = async (sessionId: string) => {
+    try {
+      setError("");
+      setClosingSessionId(sessionId);
+      await closeSession(sessionId);
+      await handleLoadSessions();
+    } catch {
+      setError("Gagal close session.");
+    } finally {
+      setClosingSessionId(null);
     }
   };
 
@@ -120,13 +140,30 @@ export default function CounselorDashboardPage() {
                       <td className="py-3 text-gray-800">{session.topic ?? "-"}</td>
                       <td className="py-3 capitalize text-gray-800">{session.status}</td>
                       <td className="py-3">
-                        <button
-                          onClick={() => handleAssign(session.id)}
-                          disabled={!canAssign || assigningSessionId === session.id}
-                          className="rounded-lg bg-blue-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {assigningSessionId === session.id ? "Assigning..." : "Assign"}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/chat/${session.id}?role=counselor`}
+                            className="rounded-lg bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-600"
+                          >
+                            Open Chat
+                          </Link>
+                          <button
+                            onClick={() => handleAssign(session.id)}
+                            disabled={!canAssign || assigningSessionId === session.id}
+                            className="rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {assigningSessionId === session.id ? "Assigning..." : "Assign"}
+                          </button>
+                          {session.status !== "closed" ? (
+                            <button
+                              onClick={() => handleClose(session.id)}
+                              disabled={closingSessionId === session.id}
+                              className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              {closingSessionId === session.id ? "Closing..." : "Close"}
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   );
