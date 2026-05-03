@@ -5,8 +5,10 @@ import {
   createMockReport,
   createMockSession,
   getMockMessages,
+  getMockReports,
   getMockSessionsByUser,
   getMockWaitingSessions,
+  markMockReportReviewed,
   type MockMessage,
   type MockReport,
   type MockSession,
@@ -66,4 +68,12 @@ export async function reportSession(
     category: payload.category,
     detail: payload.detail,
   });
+}
+
+export async function getReports() {
+  return getMockReports();
+}
+
+export async function markReportReviewed(reportId: string) {
+  return markMockReportReviewed(reportId);
 }

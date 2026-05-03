@@ -212,3 +212,17 @@ export function createMockReport(payload: {
   writeDb(db);
   return report;
 }
+
+export function getMockReports() {
+  const db = readDb();
+  return db.reports.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+}
+
+export function markMockReportReviewed(reportId: string) {
+  const db = readDb();
+  const report = db.reports.find((item) => item.id === reportId);
+  if (!report) throw new Error("Report not found");
+  report.status = "reviewed";
+  writeDb(db);
+  return report;
+}

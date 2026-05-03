@@ -82,6 +82,7 @@ export default function CounselorDashboardPage() {
         identityLabel={counselorId || staff?.username || "Counselor belum diatur"}
         links={[
           { label: "Dashboard", href: "/dashboard/counselor" },
+          { label: "Reports", href: "/dashboard/counselor/reports" },
           { label: "Staff Login", href: "/staff/login" },
         ]}
         onLogout={() => {
