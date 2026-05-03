@@ -132,6 +132,11 @@ export function getMockWaitingSessions() {
     .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
 }
 
+export function getMockSessionById(sessionId: string) {
+  const db = readDb();
+  return db.sessions.find((session) => session.id === sessionId) ?? null;
+}
+
 export function assignMockSession(sessionId: string, counselorId: string) {
   const db = readDb();
   const session = db.sessions.find((item) => item.id === sessionId);

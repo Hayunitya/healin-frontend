@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AppNavbar from "@/components/navigation/AppNavbar";
 import { useStaffAuthStore } from "@/store/staffAuthStore";
@@ -88,6 +89,7 @@ export default function CounselorReportsPage() {
                   <th className="py-3">Report ID</th>
                   <th className="py-3">Session</th>
                   <th className="py-3">Category</th>
+                  <th className="py-3">Detail</th>
                   <th className="py-3">Reporter</th>
                   <th className="py-3">Status</th>
                   <th className="py-3">Action</th>
@@ -99,6 +101,7 @@ export default function CounselorReportsPage() {
                     <td className="py-3 font-mono text-xs text-gray-700">{report.id}</td>
                     <td className="py-3 font-mono text-xs text-gray-700">{report.session_id}</td>
                     <td className="py-3 text-gray-800">{report.category}</td>
+                    <td className="py-3 text-gray-700">{report.detail}</td>
                     <td className="py-3 text-gray-800 capitalize">{report.reporter_role}</td>
                     <td className="py-3">
                       <span
@@ -112,17 +115,25 @@ export default function CounselorReportsPage() {
                       </span>
                     </td>
                     <td className="py-3">
-                      {report.status === "open" ? (
-                        <button
-                          onClick={() => handleMarkReviewed(report.id)}
-                          disabled={updatingId === report.id}
-                          className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:opacity-60"
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/chat/${report.session_id}?role=counselor`}
+                          className="rounded-lg bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-600"
                         >
-                          {updatingId === report.id ? "Updating..." : "Mark Reviewed"}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-gray-500">No action</span>
-                      )}
+                          Open Chat
+                        </Link>
+                        {report.status === "open" ? (
+                          <button
+                            onClick={() => handleMarkReviewed(report.id)}
+                            disabled={updatingId === report.id}
+                            className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:opacity-60"
+                          >
+                            {updatingId === report.id ? "Updating..." : "Mark Reviewed"}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-500">Reviewed</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -135,12 +146,6 @@ export default function CounselorReportsPage() {
           ) : null}
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-          <h3 className="text-lg font-bold text-slate-900">Detail Laporan</h3>
-          <p className="mt-2 text-sm text-slate-600">
-            Laporan detail akan ditampilkan dari kolom detail saat backend final terpasang.
-          </p>
-        </section>
       </div>
     </main>
   );

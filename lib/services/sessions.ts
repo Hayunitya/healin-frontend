@@ -4,6 +4,7 @@ import {
   createMockMessage,
   createMockReport,
   createMockSession,
+  getMockSessionById,
   getMockMessages,
   getMockReports,
   getMockSessionsByUser,
@@ -36,6 +37,10 @@ export async function assignSession(sessionId: string, counselor_id: string) {
 
 export async function closeSession(sessionId: string) {
   return closeMockSession(sessionId);
+}
+
+export async function getSessionById(sessionId: string) {
+  return getMockSessionById(sessionId);
 }
 
 export async function getMessages(sessionId: string) {

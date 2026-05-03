@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   getMessages,
+  getSessionById,
   reportSession,
   sendMessage,
   type SessionMessage,
@@ -30,6 +31,7 @@ export default function SessionChatPage() {
   const [reportDetail, setReportDetail] = useState("");
   const [reporting, setReporting] = useState(false);
   const [reportMessage, setReportMessage] = useState("");
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const loadMessages = async () => {
     try {
@@ -49,6 +51,17 @@ export default function SessionChatPage() {
     loadMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
+
+  useEffect(() => {
+    const checkOwnership = async () => {
+      if (role !== "user") return;
+      const session = await getSessionById(sessionId);
+      if (!session || !profile || session.user_id !== profile.anonymousUserId) {
+        setAccessDenied(true);
+      }
+    };
+    void checkOwnership();
+  }, [role, sessionId, profile]);
 
   const riskAlerts = useMemo(
     () => messages.filter((msg) => Boolean(msg.risk_level)),
@@ -126,133 +139,149 @@ export default function SessionChatPage() {
         }}
       />
       <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
-        <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Session Chat</p>
-              <h1 className="mt-1 text-2xl font-bold text-gray-900">{sessionId}</h1>
-              <p className="mt-1 text-sm text-gray-600">Role: {role}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={loadMessages}
-                className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-              >
-                {loading ? "Refreshing..." : "Refresh"}
-              </button>
-              <Link
-                href={role === "counselor" ? "/dashboard/counselor" : "/dashboard/user"}
-                className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
-              >
-                Back
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {riskAlerts.length > 0 ? (
-          <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-700">
-              Risk Detection Alerts
-            </h2>
-            <div className="mt-3 space-y-2 text-sm text-amber-900">
-              {riskAlerts.slice(-3).map((msg) => (
-                <p key={msg.id}>
-                  {msg.risk_level?.toUpperCase()} -{" "}
-                  {msg.risk_reason || "Sensitive content detected."}
-                </p>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {riskAlerts.length > 0 ? (
-          <section className="rounded-3xl border border-red-200 bg-red-50 p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-red-700">
-              Emergency Help
-            </h2>
-            <p className="mt-2 text-sm text-red-900">
-              Jika ada risiko bahaya langsung, hubungi bantuan darurat secepatnya.
+        {accessDenied ? (
+          <section className="rounded-3xl border border-red-200 bg-red-50 p-6">
+            <h2 className="text-lg font-bold text-red-800">Akses Ditolak</h2>
+            <p className="mt-2 text-sm text-red-700">
+              Session ini bukan milik anonymous ID kamu.
             </p>
-            <div className="mt-3 grid gap-2 text-sm text-red-900 md:grid-cols-3">
-              <p className="rounded-xl bg-white px-3 py-2">119 ext. 8 (SEJIWA)</p>
-              <p className="rounded-xl bg-white px-3 py-2">112 (Layanan Darurat)</p>
-              <p className="rounded-xl bg-white px-3 py-2">119 (Ambulans)</p>
-            </div>
+            <Link
+              href="/dashboard/user"
+              className="mt-4 inline-block rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Kembali ke Dashboard
+            </Link>
           </section>
-        ) : null}
-
-        <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
-          <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
-            {messages.map((msg) => {
-              const ownMessage = msg.sender === role;
-              return (
-                <div key={msg.id} className={`flex ${ownMessage ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                      ownMessage ? "bg-blue-500 text-white" : "bg-slate-100 text-slate-800"
-                    }`}
-                  >
-                    <p className="mb-1 text-[11px] uppercase opacity-70">{msg.sender}</p>
-                    <p>{msg.body}</p>
-                  </div>
+        ) : (
+          <>
+            <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Session Chat</p>
+                  <h1 className="mt-1 text-2xl font-bold text-gray-900">{sessionId}</h1>
+                  <p className="mt-1 text-sm text-gray-600">Role: {role}</p>
                 </div>
-              );
-            })}
-            {!loading && messages.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-500">Belum ada pesan.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={loadMessages}
+                    className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                  >
+                    {loading ? "Refreshing..." : "Refresh"}
+                  </button>
+                  <Link
+                    href={role === "counselor" ? "/dashboard/counselor" : "/dashboard/user"}
+                    className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
+                  >
+                    Back
+                  </Link>
+                </div>
+              </div>
+            </section>
+
+            {riskAlerts.length > 0 ? (
+              <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-700">
+                  Risk Detection Alerts
+                </h2>
+                <div className="mt-3 space-y-2 text-sm text-amber-900">
+                  {riskAlerts.slice(-3).map((msg) => (
+                    <p key={msg.id}>
+                      {msg.risk_level?.toUpperCase()} - {msg.risk_reason || "Sensitive content detected."}
+                    </p>
+                  ))}
+                </div>
+              </section>
             ) : null}
-          </div>
 
-          <form onSubmit={handleSend} className="mt-4 flex gap-3">
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Tulis pesan..."
-              className="flex-1 rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
-            />
-            <button
-              disabled={sending}
-              className="rounded-xl bg-blue-500 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
-            >
-              {sending ? "Sending..." : "Send"}
-            </button>
-          </form>
-          {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
-        </section>
+            {riskAlerts.length > 0 ? (
+              <section className="rounded-3xl border border-red-200 bg-red-50 p-5">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-red-700">
+                  Emergency Help
+                </h2>
+                <p className="mt-2 text-sm text-red-900">
+                  Jika ada risiko bahaya langsung, hubungi bantuan darurat secepatnya.
+                </p>
+                <div className="mt-3 grid gap-2 text-sm text-red-900 md:grid-cols-3">
+                  <p className="rounded-xl bg-white px-3 py-2">119 ext. 8 (SEJIWA)</p>
+                  <p className="rounded-xl bg-white px-3 py-2">112 (Layanan Darurat)</p>
+                  <p className="rounded-xl bg-white px-3 py-2">119 (Ambulans)</p>
+                </div>
+              </section>
+            ) : null}
 
-        <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
-          <h2 className="text-lg font-bold text-gray-900">Report Session</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Laporkan perilaku yang tidak aman atau konten yang melanggar.
-          </p>
-          <form onSubmit={handleReport} className="mt-4 space-y-3">
-            <select
-              value={reportCategory}
-              onChange={(e) => setReportCategory(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
-            >
-              <option value="abuse">Abusive behavior</option>
-              <option value="harassment">Harassment</option>
-              <option value="self_harm_risk">Self-harm risk</option>
-              <option value="other">Other</option>
-            </select>
-            <textarea
-              value={reportDetail}
-              onChange={(e) => setReportDetail(e.target.value)}
-              rows={4}
-              placeholder="Jelaskan detail laporan..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
-            />
-            <button
-              disabled={reporting}
-              className="rounded-xl bg-slate-800 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-60"
-            >
-              {reporting ? "Submitting..." : "Submit Report"}
-            </button>
-            {reportMessage ? <p className="text-sm text-slate-600">{reportMessage}</p> : null}
-          </form>
-        </section>
+            <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+              <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+                {messages.map((msg) => {
+                  const ownMessage = msg.sender === role;
+                  return (
+                    <div key={msg.id} className={`flex ${ownMessage ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                          ownMessage ? "bg-blue-500 text-white" : "bg-slate-100 text-slate-800"
+                        }`}
+                      >
+                        <p className="mb-1 text-[11px] uppercase opacity-70">{msg.sender}</p>
+                        <p>{msg.body}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {!loading && messages.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-gray-500">Belum ada pesan.</p>
+                ) : null}
+              </div>
+
+              <form onSubmit={handleSend} className="mt-4 flex gap-3">
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="Tulis pesan..."
+                  className="flex-1 rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
+                />
+                <button
+                  disabled={sending}
+                  className="rounded-xl bg-blue-500 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+                >
+                  {sending ? "Sending..." : "Send"}
+                </button>
+              </form>
+              {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+            </section>
+
+            <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+              <h2 className="text-lg font-bold text-gray-900">Report Session</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Laporkan perilaku yang tidak aman atau konten yang melanggar.
+              </p>
+              <form onSubmit={handleReport} className="mt-4 space-y-3">
+                <select
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
+                >
+                  <option value="abuse">Abusive behavior</option>
+                  <option value="harassment">Harassment</option>
+                  <option value="self_harm_risk">Self-harm risk</option>
+                  <option value="other">Other</option>
+                </select>
+                <textarea
+                  value={reportDetail}
+                  onChange={(e) => setReportDetail(e.target.value)}
+                  rows={4}
+                  placeholder="Jelaskan detail laporan..."
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
+                />
+                <button
+                  disabled={reporting}
+                  className="rounded-xl bg-slate-800 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-60"
+                >
+                  {reporting ? "Submitting..." : "Submit Report"}
+                </button>
+                {reportMessage ? <p className="text-sm text-slate-600">{reportMessage}</p> : null}
+              </form>
+            </section>
+          </>
+        )}
       </div>
     </main>
   );
