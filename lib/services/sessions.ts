@@ -2,16 +2,19 @@ import {
   assignMockSession,
   closeMockSession,
   createMockMessage,
+  createMockReport,
   createMockSession,
   getMockMessages,
   getMockSessionsByUser,
   getMockWaitingSessions,
   type MockMessage,
+  type MockReport,
   type MockSession,
 } from "@/lib/services/mockDb";
 
 export type SessionRecord = MockSession;
 export type SessionMessage = MockMessage;
+export type SessionReport = MockReport;
 
 export async function createSession(payload: { user_id: string; topic: string }) {
   return createMockSession(payload);
@@ -46,5 +49,21 @@ export async function sendMessage(
     session_id: sessionId,
     sender: payload.sender,
     body: payload.body,
+  });
+}
+
+export async function reportSession(
+  sessionId: string,
+  payload: {
+    reporter_role: "user" | "counselor";
+    category: string;
+    detail: string;
+  }
+) {
+  return createMockReport({
+    session_id: sessionId,
+    reporter_role: payload.reporter_role,
+    category: payload.category,
+    detail: payload.detail,
   });
 }

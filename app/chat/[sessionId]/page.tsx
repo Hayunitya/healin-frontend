@@ -3,7 +3,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { getMessages, sendMessage, type SessionMessage } from "@/lib/services/sessions";
+import {
+  getMessages,
+  reportSession,
+  sendMessage,
+  type SessionMessage,
+} from "@/lib/services/sessions";
 import AppNavbar from "@/components/navigation/AppNavbar";
 import { useAnonymousStore } from "@/store/anonymousStore";
 import { useStaffAuthStore } from "@/store/staffAuthStore";
@@ -21,6 +26,10 @@ export default function SessionChatPage() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [reportCategory, setReportCategory] = useState("abuse");
+  const [reportDetail, setReportDetail] = useState("");
+  const [reporting, setReporting] = useState(false);
+  const [reportMessage, setReportMessage] = useState("");
 
   const loadMessages = async () => {
     try {
@@ -63,6 +72,30 @@ export default function SessionChatPage() {
       setError("Gagal mengirim message.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleReport = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!reportDetail.trim()) {
+      setReportMessage("Detail laporan wajib diisi.");
+      return;
+    }
+
+    try {
+      setReporting(true);
+      setReportMessage("");
+      await reportSession(sessionId, {
+        reporter_role: role,
+        category: reportCategory,
+        detail: reportDetail.trim(),
+      });
+      setReportDetail("");
+      setReportMessage("Laporan berhasil dikirim (dummy).");
+    } catch {
+      setReportMessage("Gagal mengirim laporan.");
+    } finally {
+      setReporting(false);
     }
   };
 
@@ -126,9 +159,25 @@ export default function SessionChatPage() {
               {riskAlerts.slice(-3).map((msg) => (
                 <p key={msg.id}>
                   {msg.risk_level?.toUpperCase()} -{" "}
-                  {msg.risk_reason || msg.risk_reasons?.join(", ") || "Sensitive content detected."}
+                  {msg.risk_reason || "Sensitive content detected."}
                 </p>
               ))}
+            </div>
+          </section>
+        ) : null}
+
+        {riskAlerts.length > 0 ? (
+          <section className="rounded-3xl border border-red-200 bg-red-50 p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-red-700">
+              Emergency Help
+            </h2>
+            <p className="mt-2 text-sm text-red-900">
+              Jika ada risiko bahaya langsung, hubungi bantuan darurat secepatnya.
+            </p>
+            <div className="mt-3 grid gap-2 text-sm text-red-900 md:grid-cols-3">
+              <p className="rounded-xl bg-white px-3 py-2">119 ext. 8 (SEJIWA)</p>
+              <p className="rounded-xl bg-white px-3 py-2">112 (Layanan Darurat)</p>
+              <p className="rounded-xl bg-white px-3 py-2">119 (Ambulans)</p>
             </div>
           </section>
         ) : null}
@@ -170,6 +219,39 @@ export default function SessionChatPage() {
             </button>
           </form>
           {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+        </section>
+
+        <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+          <h2 className="text-lg font-bold text-gray-900">Report Session</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Laporkan perilaku yang tidak aman atau konten yang melanggar.
+          </p>
+          <form onSubmit={handleReport} className="mt-4 space-y-3">
+            <select
+              value={reportCategory}
+              onChange={(e) => setReportCategory(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
+            >
+              <option value="abuse">Abusive behavior</option>
+              <option value="harassment">Harassment</option>
+              <option value="self_harm_risk">Self-harm risk</option>
+              <option value="other">Other</option>
+            </select>
+            <textarea
+              value={reportDetail}
+              onChange={(e) => setReportDetail(e.target.value)}
+              rows={4}
+              placeholder="Jelaskan detail laporan..."
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
+            />
+            <button
+              disabled={reporting}
+              className="rounded-xl bg-slate-800 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-60"
+            >
+              {reporting ? "Submitting..." : "Submit Report"}
+            </button>
+            {reportMessage ? <p className="text-sm text-slate-600">{reportMessage}</p> : null}
+          </form>
         </section>
       </div>
     </main>

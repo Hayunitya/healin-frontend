@@ -28,24 +28,34 @@ export interface MockMessage {
   risk_reason: string | null;
 }
 
+export interface MockReport {
+  id: string;
+  session_id: string;
+  reporter_role: "user" | "counselor";
+  category: string;
+  detail: string;
+  status: "open" | "reviewed";
+  created_at: string;
+}
+
 interface MockDbSchema {
   users: MockAnonymousUser[];
   sessions: MockSession[];
   messages: MockMessage[];
+  reports: MockReport[];
 }
 
 const DB_KEY = "healin_mock_db_v1";
-
 const RISK_KEYWORDS = ["bunuh diri", "self-harm", "mati", "kill myself", "hopeless"];
 
 function readDb(): MockDbSchema {
   if (typeof window === "undefined") {
-    return { users: [], sessions: [], messages: [] };
+    return { users: [], sessions: [], messages: [], reports: [] };
   }
 
   const raw = localStorage.getItem(DB_KEY);
   if (!raw) {
-    const initial = { users: [], sessions: [], messages: [] };
+    const initial = { users: [], sessions: [], messages: [], reports: [] };
     localStorage.setItem(DB_KEY, JSON.stringify(initial));
     return initial;
   }
@@ -56,9 +66,10 @@ function readDb(): MockDbSchema {
       users: parsed.users ?? [],
       sessions: parsed.sessions ?? [],
       messages: parsed.messages ?? [],
+      reports: parsed.reports ?? [],
     };
   } catch {
-    const reset = { users: [], sessions: [], messages: [] };
+    const reset = { users: [], sessions: [], messages: [], reports: [] };
     localStorage.setItem(DB_KEY, JSON.stringify(reset));
     return reset;
   }
@@ -179,4 +190,25 @@ export function createMockMessage(payload: {
     message,
     risk_flag: risk,
   };
+}
+
+export function createMockReport(payload: {
+  session_id: string;
+  reporter_role: "user" | "counselor";
+  category: string;
+  detail: string;
+}) {
+  const db = readDb();
+  const report: MockReport = {
+    id: uid("rpt"),
+    session_id: payload.session_id,
+    reporter_role: payload.reporter_role,
+    category: payload.category,
+    detail: payload.detail,
+    status: "open",
+    created_at: new Date().toISOString(),
+  };
+  db.reports.unshift(report);
+  writeDb(db);
+  return report;
 }
