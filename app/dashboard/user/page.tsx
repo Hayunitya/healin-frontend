@@ -139,6 +139,7 @@ export default function UserDashboardPage() {
         identityLabel={`${profile.anonymousHandle} • ${profile.anonymousUserId}`}
         links={[
           { label: "Dashboard", href: "/dashboard/user" },
+          { label: "History", href: "/dashboard/user/history" },
           { label: "Start New ID", href: "/anonymous/start" },
         ]}
         onLogout={() => {
@@ -198,12 +199,20 @@ export default function UserDashboardPage() {
         <section className="rounded-3xl bg-white p-8 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">Riwayat Session</h2>
-            <button
-              onClick={loadSessions}
-              className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
-            >
-              {loadingSessions ? "Refreshing..." : "Refresh"}
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard/user/history"
+                className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+              >
+                Open Full History
+              </Link>
+              <button
+                onClick={loadSessions}
+                className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+              >
+                {loadingSessions ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
           </div>
           {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
           {latestMatchedOpenSession ? (
@@ -223,7 +232,7 @@ export default function UserDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {sessions.map((session) => (
+                {sessions.slice(0, 6).map((session) => (
                   <tr key={session.id} className="border-b border-gray-100">
                     <td className="py-3 font-mono text-xs text-gray-700">{session.id}</td>
                     <td className="py-3 text-gray-800">{session.topic ?? "-"}</td>
