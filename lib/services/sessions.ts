@@ -4,13 +4,20 @@ import {
   createMockMessage,
   createMockReport,
   createMockSession,
+  deleteMockReport,
+  deleteMockSession,
+  deleteMockUser,
+  getMockAllSessions,
   getMockAdminOverview,
   getMockSessionById,
+  getMockUsers,
   getMockMessages,
   getMockReports,
   getMockSessionsByUser,
   getMockWaitingSessions,
   markMockReportReviewed,
+  updateMockSession,
+  updateMockUser,
   type MockMessage,
   type MockReport,
   type MockSession,
@@ -86,4 +93,35 @@ export async function markReportReviewed(reportId: string) {
 
 export async function getAdminOverview() {
   return getMockAdminOverview();
+}
+
+export async function getAllUsers() {
+  return getMockUsers();
+}
+
+export async function adminUpdateUser(id: string, payload: { anon_handle: string }) {
+  return updateMockUser(id, payload);
+}
+
+export async function adminDeleteUser(id: string) {
+  return deleteMockUser(id);
+}
+
+export async function getAllSessions() {
+  return getMockAllSessions();
+}
+
+export async function adminUpdateSession(
+  id: string,
+  payload: { topic?: string | null; status?: "waiting" | "matched" | "closed" }
+) {
+  return updateMockSession(id, payload);
+}
+
+export async function adminDeleteSession(id: string) {
+  return deleteMockSession(id);
+}
+
+export async function adminDeleteReport(id: string) {
+  return deleteMockReport(id);
 }

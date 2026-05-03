@@ -1,16 +1,27 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { createAnonymousUser } from "@/lib/services/anonymous";
 import { useAnonymousStore } from "@/store/anonymousStore";
+import { useStaffAuthStore } from "@/store/staffAuthStore";
 
 export default function LoginChooserPage() {
   const router = useRouter();
   const { setAnonymousProfile } = useAnonymousStore();
+  const { clearStaffAuth } = useStaffAuthStore();
   const [creatingUser, setCreatingUser] = useState(false);
+
+  const handleCounselorRoute = () => {
+    clearStaffAuth();
+    router.push("/staff/login");
+  };
+
+  const handleAdminRoute = () => {
+    clearStaffAuth();
+    router.push("/admin/login");
+  };
 
   const handleUserLogin = async () => {
     try {
@@ -49,15 +60,25 @@ export default function LoginChooserPage() {
           {creatingUser ? <p className="mt-2 text-xs text-blue-700">Membuat ID...</p> : null}
         </button>
 
-        <Link
-          href="/staff/login"
-          className="block rounded-2xl border border-gray-200 bg-white p-5 transition hover:bg-gray-50"
+        <button
+          onClick={handleCounselorRoute}
+          className="block w-full rounded-2xl border border-gray-200 bg-white p-5 text-left transition hover:bg-gray-50"
         >
-          <p className="text-lg font-semibold text-gray-900">Counselor / Admin</p>
+          <p className="text-lg font-semibold text-gray-900">Counselor</p>
           <p className="mt-1 text-sm text-gray-600">
-            Masuk dengan akun staff (login/register).
+            Masuk dengan akun counselor (login/register).
           </p>
-        </Link>
+        </button>
+
+        <button
+          onClick={handleAdminRoute}
+          className="block w-full rounded-2xl border border-indigo-100 bg-indigo-50 p-5 text-left transition hover:bg-indigo-100"
+        >
+          <p className="text-lg font-semibold text-indigo-800">Admin</p>
+          <p className="mt-1 text-sm text-indigo-700">
+            Masuk ke dashboard admin melalui halaman login admin khusus.
+          </p>
+        </button>
       </div>
     </AuthLayout>
   );

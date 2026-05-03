@@ -1,52 +1,51 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useStaffAuthStore } from "@/store/staffAuthStore";
 
-export default function StaffLoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const { setStaffAuth } = useStaffAuthStore();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
-    if (!username || password.length < 6) {
-      alert("Invalid credentials");
+    if (username !== "admin" || password !== "admin123") {
+      setError("Akses admin ditolak. Kredensial tidak valid.");
       return;
     }
 
     setStaffAuth(
       {
-        id: "staff-counselor-1",
-        username,
-        role: "counselor",
+        id: "staff-admin-1",
+        username: "admin",
+        role: "admin",
         createdAt: new Date().toISOString(),
       },
-      "mock-counselor-token"
+      "mock-admin-token"
     );
 
-    router.push("/dashboard/counselor");
+    router.push("/admin");
   };
 
   return (
     <AuthLayout>
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900">Counselor Log In</h1>
-        <p className="mt-4 text-gray-500">Khusus counselor platform Heal.in</p>
+        <h1 className="text-4xl font-bold text-gray-900">Admin Access</h1>
+        <p className="mt-3 text-gray-600">Halaman ini khusus administrator platform.</p>
       </div>
 
-      <form onSubmit={handleLogin} className="mt-8 space-y-5">
+      <form onSubmit={handleAdminLogin} className="mt-8 space-y-5">
         <div>
-          <label className="mb-2 block text-sm font-medium">Username</label>
+          <label className="mb-2 block text-sm font-medium">Admin Username</label>
           <input
             type="text"
-            placeholder="username counselor"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="w-full rounded-xl border border-gray-200 bg-gray-50 p-4 outline-none transition focus:border-blue-500"
@@ -54,27 +53,21 @@ export default function StaffLoginPage() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">Password</label>
+          <label className="mb-2 block text-sm font-medium">Admin Password</label>
           <input
             type="password"
-            placeholder="********"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border border-gray-200 bg-gray-50 p-4 outline-none transition focus:border-blue-500"
           />
         </div>
 
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+
         <button className="w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600">
-          Log In
+          Enter Admin Dashboard
         </button>
       </form>
-
-      <p className="mt-5 text-center text-sm text-gray-600">
-        Belum punya akun counselor?{" "}
-        <Link href="/staff/register" className="font-semibold text-blue-600 hover:text-blue-700">
-          Register
-        </Link>
-      </p>
     </AuthLayout>
   );
 }

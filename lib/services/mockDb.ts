@@ -265,3 +265,56 @@ export function getMockAdminOverview() {
     recentReports,
   };
 }
+
+export function getMockUsers() {
+  const db = readDb();
+  return [...db.users].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+}
+
+export function updateMockUser(id: string, payload: { anon_handle: string }) {
+  const db = readDb();
+  const user = db.users.find((item) => item.id === id);
+  if (!user) throw new Error("User not found");
+  user.anon_handle = payload.anon_handle;
+  writeDb(db);
+  return user;
+}
+
+export function deleteMockUser(id: string) {
+  const db = readDb();
+  db.users = db.users.filter((user) => user.id !== id);
+  db.sessions = db.sessions.filter((session) => session.user_id !== id);
+  writeDb(db);
+}
+
+export function getMockAllSessions() {
+  const db = readDb();
+  return [...db.sessions].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+}
+
+export function updateMockSession(
+  id: string,
+  payload: { topic?: string | null; status?: MockSessionStatus }
+) {
+  const db = readDb();
+  const session = db.sessions.find((item) => item.id === id);
+  if (!session) throw new Error("Session not found");
+  if (payload.topic !== undefined) session.topic = payload.topic;
+  if (payload.status) session.status = payload.status;
+  writeDb(db);
+  return session;
+}
+
+export function deleteMockSession(id: string) {
+  const db = readDb();
+  db.sessions = db.sessions.filter((session) => session.id !== id);
+  db.messages = db.messages.filter((message) => message.session_id !== id);
+  db.reports = db.reports.filter((report) => report.session_id !== id);
+  writeDb(db);
+}
+
+export function deleteMockReport(id: string) {
+  const db = readDb();
+  db.reports = db.reports.filter((report) => report.id !== id);
+  writeDb(db);
+}

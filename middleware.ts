@@ -11,7 +11,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
 };
 
 // Routes only for staff guests
-const STAFF_GUEST_ONLY_ROUTES = ["/staff/login", "/staff/register"];
+const STAFF_GUEST_ONLY_ROUTES = ["/staff/login", "/staff/register", "/admin/login"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -35,6 +35,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(dashboardPath, request.url));
   }
 
+  if (pathname.startsWith("/admin/login")) {
+    return NextResponse.next();
+  }
+
   // Anonymous-user routes are public.
   if (
     pathname === "/" ||
@@ -52,7 +56,10 @@ export function middleware(request: NextRequest) {
   );
 
   if ((isProtected || isRoleProtected) && !isStaffAuthenticated) {
-    const loginUrl = new URL("/staff/login", request.url);
+    const loginUrl = new URL(
+      pathname.startsWith("/admin") ? "/admin/login" : "/staff/login",
+      request.url
+    );
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
