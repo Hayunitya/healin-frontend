@@ -231,3 +231,37 @@ export function markMockReportReviewed(reportId: string) {
   writeDb(db);
   return report;
 }
+
+export function getMockAdminOverview() {
+  const db = readDb();
+
+  const sessionsByStatus = {
+    waiting: db.sessions.filter((session) => session.status === "waiting").length,
+    matched: db.sessions.filter((session) => session.status === "matched").length,
+    closed: db.sessions.filter((session) => session.status === "closed").length,
+  };
+
+  const reportsByStatus = {
+    open: db.reports.filter((report) => report.status === "open").length,
+    reviewed: db.reports.filter((report) => report.status === "reviewed").length,
+  };
+
+  const recentSessions = [...db.sessions]
+    .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+    .slice(0, 8);
+
+  const recentReports = [...db.reports]
+    .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+    .slice(0, 8);
+
+  return {
+    totalUsers: db.users.length,
+    totalSessions: db.sessions.length,
+    totalMessages: db.messages.length,
+    totalReports: db.reports.length,
+    sessionsByStatus,
+    reportsByStatus,
+    recentSessions,
+    recentReports,
+  };
+}

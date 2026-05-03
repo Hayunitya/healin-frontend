@@ -4,6 +4,7 @@ import {
   createMockMessage,
   createMockReport,
   createMockSession,
+  getMockAdminOverview,
   getMockSessionById,
   getMockMessages,
   getMockReports,
@@ -81,4 +82,8 @@ export async function getReports() {
 
 export async function markReportReviewed(reportId: string) {
   return markMockReportReviewed(reportId);
+}
+
+export async function getAdminOverview() {
+  return getMockAdminOverview();
 }
