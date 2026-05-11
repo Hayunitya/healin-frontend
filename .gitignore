@@ -39,6 +39,11 @@ coverage/
 
 # misc
 *.pem
+*.tmp
+*.temp
+*.bak
+*.orig
+*.zip
 
 # TypeScript
 *.tsbuildinfo
@@ -48,3 +53,6 @@ coverage/
 
 # prettier
 .prettierrc
+
+# keep example env
+!.env.example

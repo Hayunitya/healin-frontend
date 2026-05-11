@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError("");
 
-    if (username !== "admin" || password !== "admin123") {
+    if (username !== "admin" || password !== "1234567890") {
       setError("Akses admin ditolak. Kredensial tidak valid.");
       return;
     }
