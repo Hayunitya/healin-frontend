@@ -31,7 +31,7 @@ export interface MockMessage {
 export interface MockReport {
   id: string;
   session_id: string;
-  reporter_role: "user" | "counselor";
+  reporter_user_id: string;
   category: string;
   detail: string;
   status: "open" | "reviewed";
@@ -199,7 +199,7 @@ export function createMockMessage(payload: {
 
 export function createMockReport(payload: {
   session_id: string;
-  reporter_role: "user" | "counselor";
+  reporter_user_id: string;
   category: string;
   detail: string;
 }) {
@@ -207,7 +207,7 @@ export function createMockReport(payload: {
   const report: MockReport = {
     id: uid("rpt"),
     session_id: payload.session_id,
-    reporter_role: payload.reporter_role,
+    reporter_user_id: payload.reporter_user_id,
     category: payload.category,
     detail: payload.detail,
     status: "open",

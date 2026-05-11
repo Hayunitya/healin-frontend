@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-6 p-6">
             {tab === "overview" ? (
               <>
-                <div className="grid gap-4 md:grid-cols-4">
+                <div className="grid gap-3 md:grid-cols-4">
                   <KpiCard title="Total Users" value={overview?.totalUsers ?? 0} accent="text-blue-600" />
                   <KpiCard title="Total Sessions" value={overview?.totalSessions ?? 0} accent="text-indigo-600" />
                   <KpiCard title="Total Reports" value={overview?.totalReports ?? 0} accent="text-amber-600" />
@@ -332,9 +332,9 @@ export default function AdminDashboardPage() {
 
 function KpiCard({ title, value, accent }: { title: string; value: number; accent: string }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm">
-      <p className="text-xs uppercase tracking-wide text-gray-500">{title}</p>
-      <p className={`mt-2 text-3xl font-bold ${accent}`}>{value}</p>
+    <div className="rounded-xl bg-white p-4 shadow-sm">
+      <p className="text-[11px] uppercase tracking-wide text-gray-500">{title}</p>
+      <p className={`mt-1 text-2xl font-bold ${accent}`}>{value}</p>
     </div>
   );
 }

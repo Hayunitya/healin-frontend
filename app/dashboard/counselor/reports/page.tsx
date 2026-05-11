@@ -90,7 +90,7 @@ export default function CounselorReportsPage() {
                   <th className="py-3">Session</th>
                   <th className="py-3">Category</th>
                   <th className="py-3">Detail</th>
-                  <th className="py-3">Reporter</th>
+                  <th className="py-3">Reporter User ID</th>
                   <th className="py-3">Status</th>
                   <th className="py-3">Action</th>
                 </tr>
@@ -102,7 +102,7 @@ export default function CounselorReportsPage() {
                     <td className="py-3 font-mono text-xs text-gray-700">{report.session_id}</td>
                     <td className="py-3 text-gray-800">{report.category}</td>
                     <td className="py-3 text-gray-700">{report.detail}</td>
-                    <td className="py-3 text-gray-800 capitalize">{report.reporter_role}</td>
+                    <td className="py-3 font-mono text-xs text-gray-700">{report.reporter_user_id}</td>
                     <td className="py-3">
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-semibold ${

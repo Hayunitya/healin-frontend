@@ -90,6 +90,14 @@ export default function SessionChatPage() {
 
   const handleReport = async (e: FormEvent) => {
     e.preventDefault();
+    if (role !== "user") {
+      setReportMessage("Hanya user yang bisa mengirim report.");
+      return;
+    }
+    if (!profile?.anonymousUserId) {
+      setReportMessage("Anonymous user ID tidak ditemukan.");
+      return;
+    }
     if (!reportDetail.trim()) {
       setReportMessage("Detail laporan wajib diisi.");
       return;
@@ -99,7 +107,7 @@ export default function SessionChatPage() {
       setReporting(true);
       setReportMessage("");
       await reportSession(sessionId, {
-        reporter_role: role,
+        reporter_user_id: profile.anonymousUserId,
         category: reportCategory,
         detail: reportDetail.trim(),
       });
@@ -186,7 +194,8 @@ export default function SessionChatPage() {
                 <div className="mt-3 space-y-2 text-sm text-amber-900">
                   {riskAlerts.slice(-3).map((msg) => (
                     <p key={msg.id}>
-                      {msg.risk_level?.toUpperCase()} - {msg.risk_reason || "Sensitive content detected."}
+                      {msg.risk_level?.toUpperCase()} -{" "}
+                      {msg.risk_reasons?.[0] || msg.risk_reason || "Sensitive content detected."}
                     </p>
                   ))}
                 </div>
@@ -248,7 +257,8 @@ export default function SessionChatPage() {
               {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
             </section>
 
-            <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+            {role === "user" ? (
+              <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
               <h2 className="text-lg font-bold text-gray-900">Report Session</h2>
               <p className="mt-1 text-sm text-gray-600">
                 Laporkan perilaku yang tidak aman atau konten yang melanggar.
@@ -260,8 +270,7 @@ export default function SessionChatPage() {
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 outline-none focus:border-blue-500"
                 >
                   <option value="abuse">Abusive behavior</option>
-                  <option value="harassment">Harassment</option>
-                  <option value="self_harm_risk">Self-harm risk</option>
+                  <option value="spam">Spam</option>
                   <option value="other">Other</option>
                 </select>
                 <textarea
@@ -279,7 +288,8 @@ export default function SessionChatPage() {
                 </button>
                 {reportMessage ? <p className="text-sm text-slate-600">{reportMessage}</p> : null}
               </form>
-            </section>
+              </section>
+            ) : null}
           </>
         )}
       </div>
