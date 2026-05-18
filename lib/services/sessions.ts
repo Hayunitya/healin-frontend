@@ -8,11 +8,11 @@ import {
   deleteMockReport,
   deleteMockSession,
   deleteMockUser,
-  getMockAllSessions,
   getMockAdminOverview,
-  getMockUsers,
+  getMockAllSessions,
   getMockMessages,
   getMockReports,
+  getMockUsers,
   getMockWaitingSessions,
   markMockReportReviewed,
   updateMockSession,
@@ -40,14 +40,27 @@ export async function createSession(payload: { user_id: string; topic?: string }
 }
 
 export async function getSessionsByUser(user_id: string) {
-  const response = await api.get<{ data: SessionRecord[] }>("/sessions", {
-    params: { user_id },
-  });
-  return response.data.data;
+  try {
+    const response = await api.get<{ data: SessionRecord[] }>("/sessions", {
+      params: { user_id },
+    });
+    return response.data.data;
+  } catch {
+    // eslint-disable-next-line no-console
+    console.warn("[sessions] fallback to mock for getSessionsByUser");
+    return [];
+  }
 }
 
 export async function getWaitingSessions() {
-  return getMockWaitingSessions();
+  try {
+    const response = await api.get<{ data: SessionRecord[] }>("/sessions", {
+      params: { status: "waiting" },
+    });
+    return response.data.data;
+  } catch {
+    return getMockWaitingSessions();
+  }
 }
 
 export async function assignSession(sessionId: string, counselor_id: string) {
@@ -111,11 +124,7 @@ export async function sendMessage(
 
 export async function reportSession(
   sessionId: string,
-  payload: {
-    reporter_user_id: string;
-    category: string;
-    detail: string;
-  }
+  payload: { reporter_user_id: string; category: string; detail: string }
 ) {
   try {
     const response = await api.post<SessionReport>(`/sessions/${sessionId}/report`, payload);
@@ -131,44 +140,115 @@ export async function reportSession(
 }
 
 export async function getReports() {
-  return getMockReports();
+  try {
+    const response = await api.get<{ data: SessionReport[] }>("/sessions/reports");
+    return response.data.data;
+  } catch {
+    return getMockReports();
+  }
 }
 
 export async function markReportReviewed(reportId: string) {
-  return markMockReportReviewed(reportId);
+  try {
+    const response = await api.patch<SessionReport>(`/sessions/reports/${reportId}/review`);
+    return response.data;
+  } catch {
+    return markMockReportReviewed(reportId);
+  }
+}
+
+export async function adminDeleteReport(id: string) {
+  try {
+    await api.delete(`/sessions/reports/${id}`);
+  } catch {
+    return deleteMockReport(id);
+  }
 }
 
 export async function getAdminOverview() {
-  return getMockAdminOverview();
+  try {
+    const [usersRes, sessionsRes, reportsRes] = await Promise.all([
+      api.get<{ data: unknown[] }>("/users"),
+      api.get<{ data: SessionRecord[] }>("/sessions"),
+      api.get<{ data: SessionReport[] }>("/sessions/reports"),
+    ]);
+
+    const sessions = sessionsRes.data.data;
+    const reports = reportsRes.data.data;
+
+    return {
+      totalUsers: usersRes.data.data.length,
+      totalSessions: sessions.length,
+      totalMessages: 0,
+      totalReports: reports.length,
+      sessionsByStatus: {
+        waiting: sessions.filter((s) => s.status === "waiting").length,
+        matched: sessions.filter((s) => s.status === "matched").length,
+        closed: sessions.filter((s) => s.status === "closed").length,
+      },
+      reportsByStatus: {
+        open: reports.filter((r) => r.status === "open").length,
+        reviewed: reports.filter((r) => r.status === "reviewed").length,
+      },
+      recentSessions: sessions.slice(0, 8),
+      recentReports: reports.slice(0, 8),
+    };
+  } catch {
+    return getMockAdminOverview();
+  }
 }
 
 export async function getAllUsers() {
-  return getMockUsers();
+  try {
+    const response = await api.get<{ data: unknown[] }>("/users");
+    return response.data.data;
+  } catch {
+    return getMockUsers();
+  }
 }
 
 export async function adminUpdateUser(id: string, payload: { anon_handle: string }) {
-  return updateMockUser(id, payload);
+  try {
+    const response = await api.patch(`/users/${id}`, payload);
+    return response.data;
+  } catch {
+    return updateMockUser(id, payload);
+  }
 }
 
 export async function adminDeleteUser(id: string) {
-  return deleteMockUser(id);
+  try {
+    await api.delete(`/users/${id}`);
+  } catch {
+    return deleteMockUser(id);
+  }
 }
 
 export async function getAllSessions() {
-  return getMockAllSessions();
+  try {
+    const response = await api.get<{ data: SessionRecord[] }>("/sessions");
+    return response.data.data;
+  } catch {
+    return getMockAllSessions();
+  }
 }
 
 export async function adminUpdateSession(
   id: string,
   payload: { topic?: string | null; status?: "waiting" | "matched" | "closed" }
 ) {
-  return updateMockSession(id, payload);
+  try {
+    const response = await api.patch<SessionRecord>(`/sessions/${id}`, payload);
+    return response.data;
+  } catch {
+    return updateMockSession(id, payload);
+  }
 }
 
 export async function adminDeleteSession(id: string) {
-  return deleteMockSession(id);
-}
-
-export async function adminDeleteReport(id: string) {
-  return deleteMockReport(id);
+  try {
+    await api.delete(`/sessions/${id}`);
+  } catch {
+    return deleteMockSession(id);
+  }
 }

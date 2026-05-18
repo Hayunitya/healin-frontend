@@ -1,14 +1,21 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { User, UserRole } from "@/types";
+import type { UserRole } from "@/types";
+
+interface AuthUser {
+  id: string;
+  username: string;
+  email?: string;
+  anon_handle?: string;
+  role: UserRole;
+  created_at: string;
+}
 
 interface AuthState {
-  user: User | null;
+  user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
-
-  // Actions
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: AuthUser, token: string) => void;
   clearAuth: () => void;
   getRole: () => UserRole | null;
 }
@@ -21,7 +28,6 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (user, token) => {
-        // Also store token in localStorage for axios interceptor
         if (typeof window !== "undefined") {
           localStorage.setItem("healin_token", token);
         }
@@ -39,7 +45,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "healin-auth",
-      // Only persist user & token, not derived state
       partialize: (state) => ({
         user: state.user,
         token: state.token,

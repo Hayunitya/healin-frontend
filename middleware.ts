@@ -43,6 +43,7 @@ export function middleware(request: NextRequest) {
   if (
     pathname === "/" ||
     pathname === "/login" ||
+    pathname === "/register" ||
     pathname.startsWith("/anonymous") ||
     pathname.startsWith("/dashboard/user") ||
     pathname.startsWith("/chat")

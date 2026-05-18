@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useStaffAuthStore } from "@/store/staffAuthStore";
+import api from "@/lib/api";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -11,27 +12,40 @@ export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    if (username !== "admin" || password !== "1234567890") {
-      setError("Akses admin ditolak. Kredensial tidak valid.");
-      return;
+    try {
+      const response = await api.post<{
+        token: string;
+        user: { id: string; username: string; role: string; created_at: string };
+      }>("/auth/login", { username, password });
+
+      const { token, user } = response.data;
+
+      if (user.role !== "admin") {
+        setError("Akses ditolak. Akun ini bukan admin.");
+        return;
+      }
+
+      setStaffAuth(
+        { id: user.id, username: user.username, role: "admin", createdAt: user.created_at },
+        token
+      );
+      router.push("/admin");
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : null;
+      setError(msg ?? "Login gagal. Periksa username dan password.");
+    } finally {
+      setLoading(false);
     }
-
-    setStaffAuth(
-      {
-        id: "staff-admin-1",
-        username: "admin",
-        role: "admin",
-        createdAt: new Date().toISOString(),
-      },
-      "mock-admin-token"
-    );
-
-    router.push("/admin");
   };
 
   return (
@@ -64,8 +78,11 @@ export default function AdminLoginPage() {
 
         {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
-        <button className="w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600">
-          Enter Admin Dashboard
+        <button
+          disabled={loading}
+          className="w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600 disabled:opacity-70"
+        >
+          {loading ? "Logging in..." : "Enter Admin Dashboard"}
         </button>
       </form>
     </AuthLayout>

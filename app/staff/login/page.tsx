@@ -5,33 +5,48 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useStaffAuthStore } from "@/store/staffAuthStore";
+import api from "@/lib/api";
 
 export default function StaffLoginPage() {
   const router = useRouter();
   const { setStaffAuth } = useStaffAuthStore();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    if (!username || password.length < 6) {
-      alert("Invalid credentials");
-      return;
+    try {
+      const response = await api.post<{
+        token: string;
+        user: { id: string; username: string; role: string; created_at: string };
+      }>("/auth/login", { username, password });
+
+      const { token, user } = response.data;
+
+      if (user.role !== "counselor") {
+        setError("Akses ditolak. Akun ini bukan counselor.");
+        return;
+      }
+
+      setStaffAuth(
+        { id: user.id, username: user.username, role: "counselor", createdAt: user.created_at },
+        token
+      );
+      router.push("/dashboard/counselor");
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : null;
+      setError(msg ?? "Login gagal. Periksa username dan password.");
+    } finally {
+      setLoading(false);
     }
-
-    setStaffAuth(
-      {
-        id: "staff-counselor-1",
-        username,
-        role: "counselor",
-        createdAt: new Date().toISOString(),
-      },
-      "mock-counselor-token"
-    );
-
-    router.push("/dashboard/counselor");
   };
 
   return (
@@ -64,8 +79,13 @@ export default function StaffLoginPage() {
           />
         </div>
 
-        <button className="w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600">
-          Log In
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+
+        <button
+          disabled={loading}
+          className="w-full rounded-2xl bg-blue-500 py-4 font-semibold text-white transition hover:bg-blue-600 disabled:opacity-70"
+        >
+          {loading ? "Logging in..." : "Log In"}
         </button>
       </form>
 

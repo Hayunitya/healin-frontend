@@ -23,6 +23,7 @@ export interface LoginPayload {
 
 export interface RegisterPayload {
   username: string;
+  email?: string;
   password: string;
   role?: UserRole;
 }
@@ -38,44 +39,73 @@ export interface Topic {
 
 // ─── Session ─────────────────────────────────────────────────────────────────
 
-export type SessionStatus = "waiting" | "active" | "ended";
+// Sesuai dengan database enum dan backend: waiting → matched → active → closed
+export type SessionStatus = "waiting" | "matched" | "active" | "closed";
 
 export interface Session {
   id: string;
-  userId: string;
-  counselorId?: string;
-  topicId: string;
-  topic: Topic;
+  user_id: string;
+  counselor_id?: string | null;
+  topic?: string | null;
   status: SessionStatus;
-  startedAt?: string;
-  endedAt?: string;
-  durationMinutes?: number;
-  createdAt: string;
+  created_at: string;
+  matched_at?: string | null;
+  closed_at?: string | null;
 }
 
 // ─── Message ─────────────────────────────────────────────────────────────────
 
-export type MessageSender = "user" | "counselor";
+export type MessageSender = "user" | "counselor" | "system";
 
 export interface Message {
   id: string;
-  sessionId: string;
+  session_id: string;
   sender: MessageSender;
-  content: string;
-  isSensitive?: boolean;
-  createdAt: string;
+  sender_id?: string | null;
+  body: string;
+  created_at: string;
+  risk_level?: string | null;
+  risk_score?: number | null;
+  risk_reasons?: string[] | null;
 }
 
 // ─── Counselor ───────────────────────────────────────────────────────────────
 
-export type CounselorStatus = "online" | "busy" | "offline";
-
 export interface Counselor {
   id: string;
-  username: string;
-  topics: Topic[];
-  status: CounselorStatus;
-  totalSessions: number;
+  name: string;
+  email?: string;
+  specialization?: string;
+  display_name?: string;
+  is_active: boolean;
+  is_available: boolean;
+  created_at: string;
+}
+
+// ─── Risk ────────────────────────────────────────────────────────────────────
+
+export type RiskLevel = "low" | "medium" | "high";
+
+export interface RiskFlag {
+  id: string;
+  session_id: string;
+  message_id: string;
+  level: RiskLevel;
+  score: number;
+  reasons: string[];
+  created_at: string;
+}
+
+// ─── Report ──────────────────────────────────────────────────────────────────
+
+export interface Report {
+  id: string;
+  session_id: string;
+  reporter_user_id?: string | null;
+  category: string;
+  detail: string;
+  status: "open" | "reviewed";
+  created_at: string;
 }
 
 // ─── API Generic ─────────────────────────────────────────────────────────────
