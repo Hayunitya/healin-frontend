@@ -145,7 +145,7 @@ export default function CounselorDashboardPage() {
                             className={`rounded-full px-2 py-1 text-xs font-medium ${
                               session.status === "waiting"
                                 ? "bg-amber-100 text-amber-700"
-                                : session.status === "matched" || session.status === "active"
+                                : session.status === "matched"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-gray-100 text-gray-600"
                             }`}

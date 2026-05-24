@@ -6,7 +6,7 @@ export const getSocket = (): Socket => {
   if (!socket) {
     const token =
       typeof window !== "undefined"
-        ? localStorage.getItem("healin_token")
+        ? localStorage.getItem("healin_staff_token")
         : null;
 
     socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000", {

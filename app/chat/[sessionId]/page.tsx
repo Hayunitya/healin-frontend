@@ -7,7 +7,9 @@ import {
   getMessages,
   getSessionById,
   reportSession,
+  summarizeSessionById,
   type SessionMessage,
+  type SessionSummary,
 } from "@/lib/services/sessions";
 import AppNavbar from "@/components/navigation/AppNavbar";
 import { useAnonymousStore } from "@/store/anonymousStore";
@@ -35,6 +37,9 @@ export default function SessionChatPage() {
   const [reporting, setReporting] = useState(false);
   const [reportMessage, setReportMessage] = useState("");
   const [accessDenied, setAccessDenied] = useState(false);
+  const [summary, setSummary] = useState<SessionSummary | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const senderId = role === "user" ? profile?.anonymousUserId : staff?.id;
@@ -166,6 +171,19 @@ export default function SessionChatPage() {
       setReportMessage("Gagal mengirim laporan.");
     } finally {
       setReporting(false);
+    }
+  };
+
+  const handleSummarize = async () => {
+    try {
+      setSummarizing(true);
+      setSummaryError("");
+      const result = await summarizeSessionById(sessionId);
+      setSummary(result);
+    } catch {
+      setSummaryError("Gagal membuat ringkasan. Pastikan GEMINI_API_KEY sudah diset.");
+    } finally {
+      setSummarizing(false);
     }
   };
 
@@ -310,6 +328,53 @@ export default function SessionChatPage() {
               </form>
               {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
             </section>
+
+            {/* AI Summary — counselor only */}
+            {role === "counselor" ? (
+              <section className="rounded-3xl bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Ringkasan AI</h2>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Generate ringkasan otomatis sesi ini menggunakan Gemini.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleSummarize}
+                    disabled={summarizing}
+                    className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                  >
+                    {summarizing ? "Memproses..." : "Generate Ringkasan"}
+                  </button>
+                </div>
+                {summaryError ? (
+                  <p className="mt-3 text-sm text-red-500">{summaryError}</p>
+                ) : null}
+                {summary ? (
+                  <div className="mt-4 space-y-3 rounded-2xl bg-violet-50 p-4">
+                    <p className="text-sm text-violet-900">{summary.summary}</p>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full bg-violet-200 px-3 py-1 font-medium text-violet-800">
+                        Topik: {summary.topic}
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 font-medium ${
+                          summary.risk_level === "high"
+                            ? "bg-red-200 text-red-800"
+                            : summary.risk_level === "medium"
+                            ? "bg-amber-200 text-amber-800"
+                            : summary.risk_level === "low"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        Risk: {summary.risk_level}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
 
             {/* Report section — user only */}
             {role === "user" ? (

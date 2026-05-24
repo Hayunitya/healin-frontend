@@ -25,7 +25,7 @@ export interface MockMessage {
   created_at: string;
   risk_level: string | null;
   risk_score: number | null;
-  risk_reason: string | null;
+  risk_reasons: string[] | null;
 }
 
 export interface MockReport {
@@ -162,7 +162,7 @@ function detectMockRisk(body: string) {
   const lowered = body.toLowerCase();
   const matched = RISK_KEYWORDS.find((keyword) => lowered.includes(keyword));
   if (!matched) return null;
-  return { level: "high", score: 0.92, reason: `Detected keyword: ${matched}` };
+  return { level: "high", score: 0.92, reasons: [`Detected keyword: ${matched}`] };
 }
 
 export function getMockMessages(sessionId: string) {
@@ -187,7 +187,7 @@ export function createMockMessage(payload: {
     created_at: new Date().toISOString(),
     risk_level: risk?.level ?? null,
     risk_score: risk?.score ?? null,
-    risk_reason: risk?.reason ?? null,
+    risk_reasons: risk?.reasons ?? null,
   };
   db.messages.push(message);
   writeDb(db);

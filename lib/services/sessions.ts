@@ -23,7 +23,7 @@ import {
 } from "@/lib/services/mockDb";
 
 export type SessionRecord = MockSession;
-export type SessionMessage = MockMessage & { risk_reasons?: string[] | null };
+export type SessionMessage = MockMessage;
 export type SessionReport = MockReport;
 
 interface SessionMessagesResponse {
@@ -251,4 +251,15 @@ export async function adminDeleteSession(id: string) {
   } catch {
     return deleteMockSession(id);
   }
+}
+
+export interface SessionSummary {
+  summary: string;
+  topic: string;
+  risk_level: "none" | "low" | "medium" | "high";
+}
+
+export async function summarizeSessionById(sessionId: string): Promise<SessionSummary> {
+  const response = await api.post<SessionSummary>(`/sessions/${sessionId}/summarize`);
+  return response.data;
 }
