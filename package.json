@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
+    "typescript": "^5",
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
     "@tanstack/react-query": "^5.99.2",
