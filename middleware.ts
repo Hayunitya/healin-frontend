@@ -10,9 +10,6 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/admin": ["admin"],
 };
 
-// Routes only for staff guests
-const STAFF_GUEST_ONLY_ROUTES = ["/staff/login", "/staff/register", "/admin/login"];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -22,20 +19,12 @@ export function middleware(request: NextRequest) {
 
   const isStaffAuthenticated = Boolean(token);
 
+  // Always allow login pages so users can switch accounts
   if (
-    isStaffAuthenticated &&
-    STAFF_GUEST_ONLY_ROUTES.some((r) => pathname.startsWith(r))
+    pathname.startsWith("/staff/login") ||
+    pathname.startsWith("/staff/register") ||
+    pathname.startsWith("/admin/login")
   ) {
-    const dashboardPath =
-      role === "admin"
-        ? "/admin"
-        : role === "counselor"
-        ? "/dashboard/counselor"
-        : "/staff/login";
-    return NextResponse.redirect(new URL(dashboardPath, request.url));
-  }
-
-  if (pathname.startsWith("/admin/login")) {
     return NextResponse.next();
   }
 

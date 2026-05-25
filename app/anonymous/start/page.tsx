@@ -12,6 +12,14 @@ export default function StartAnonymousPage() {
   const [createdId, setCreatedId] = useState<string | null>(profile?.anonymousUserId ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!createdId) return;
+    await navigator.clipboard.writeText(createdId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const hint = useMemo(
     () =>
@@ -63,6 +71,12 @@ export default function StartAnonymousPage() {
               Anonymous User ID
             </p>
             <p className="mt-2 break-all text-xl font-bold text-blue-900">{createdId}</p>
+            <button
+              onClick={handleCopy}
+              className="mt-3 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition"
+            >
+              {copied ? "Tersalin!" : "Salin ID"}
+            </button>
           </div>
           <p className="text-sm text-gray-600">{hint}</p>
           <button

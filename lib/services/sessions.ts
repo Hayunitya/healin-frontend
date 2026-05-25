@@ -63,6 +63,17 @@ export async function getWaitingSessions() {
   }
 }
 
+export async function getMySessions(counselor_id: string) {
+  try {
+    const response = await api.get<{ data: SessionRecord[] }>("/sessions", {
+      params: { counselor_id },
+    });
+    return response.data.data;
+  } catch {
+    return [];
+  }
+}
+
 export async function assignSession(sessionId: string, counselor_id: string) {
   try {
     const response = await api.post<SessionRecord>(`/sessions/${sessionId}/assign`, {
@@ -261,5 +272,53 @@ export interface SessionSummary {
 
 export async function summarizeSessionById(sessionId: string): Promise<SessionSummary> {
   const response = await api.post<SessionSummary>(`/sessions/${sessionId}/summarize`);
+  return response.data;
+}
+
+export interface EscalationRecord {
+  id: string;
+  session_id: string;
+  message_id: string;
+  level: string;
+  status: string;
+  created_at: string;
+  session_status: string;
+  counselor_id: string | null;
+  message_body: string | null;
+}
+
+export async function getEscalations(): Promise<EscalationRecord[]> {
+  const response = await api.get<{ data: EscalationRecord[] }>("/sessions/escalations");
+  return response.data.data;
+}
+
+export async function resolveEscalation(id: string): Promise<EscalationRecord> {
+  const response = await api.patch<EscalationRecord>(`/sessions/escalations/${id}/resolve`);
+  return response.data;
+}
+
+export interface CounselorRecord {
+  id: string;
+  name: string;
+  email: string;
+  specialization: string;
+  is_active: boolean;
+  is_available: boolean;
+  display_name: string;
+  created_at: string;
+}
+
+export async function getAllCounselors(): Promise<CounselorRecord[]> {
+  const response = await api.get<{ data: CounselorRecord[] }>("/counselors");
+  return response.data.data;
+}
+
+export async function suspendCounselor(id: string): Promise<CounselorRecord> {
+  const response = await api.patch<CounselorRecord>(`/counselors/${id}/suspend`);
+  return response.data;
+}
+
+export async function unsuspendCounselor(id: string): Promise<CounselorRecord> {
+  const response = await api.patch<CounselorRecord>(`/counselors/${id}/unsuspend`);
   return response.data;
 }

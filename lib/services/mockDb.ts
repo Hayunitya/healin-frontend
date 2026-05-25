@@ -15,6 +15,8 @@ export interface MockSession {
   created_at: string;
   matched_at: string | null;
   closed_at: string | null;
+  high_risk_count?: number;
+  open_escalations?: number;
 }
 
 export interface MockMessage {

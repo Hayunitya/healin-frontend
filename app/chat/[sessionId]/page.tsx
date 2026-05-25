@@ -40,6 +40,14 @@ export default function SessionChatPage() {
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [summarizing, setSummarizing] = useState(false);
   const [summaryError, setSummaryError] = useState("");
+  const [riskToasts, setRiskToasts] = useState<{ id: string; reasons: string[]; score: number }[]>([]);
+
+  const addRiskToast = (flag: { level: string; reasons: string[]; score: number }) => {
+    if (flag.level !== "high") return;
+    const id = crypto.randomUUID();
+    setRiskToasts((prev) => [...prev, { id, reasons: flag.reasons ?? [], score: flag.score }]);
+    setTimeout(() => setRiskToasts((prev) => prev.filter((t) => t.id !== id)), 6000);
+  };
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const senderId = role === "user" ? profile?.anonymousUserId : staff?.id;
@@ -76,13 +84,16 @@ export default function SessionChatPage() {
 
     socket.on("disconnect", () => setConnected(false));
 
-    socket.on("new_message", ({ message }: { message: SessionMessage }) => {
+    socket.on("new_message", ({ message, risk_flag }: { message: SessionMessage; risk_flag?: { level: string; reasons: string[]; score: number } | null }) => {
       if (mounted) {
         setMessages((prev) => {
-          // Hindari duplikat (pesan yang kita kirim sudah masuk via broadcast)
           if (prev.some((m) => m.id === message.id)) return prev;
           return [...prev, message];
         });
+        // Toast hanya untuk counselor ketika pesan user masuk high risk
+        if (risk_flag && message.sender === "user") {
+          addRiskToast(risk_flag);
+        }
       }
     });
 
@@ -189,6 +200,21 @@ export default function SessionChatPage() {
 
   return (
     <main className="min-h-screen bg-linear-to-b from-[#edf4ff] to-white">
+      {/* Risk toast notifications — pojok kanan atas */}
+      <div className="fixed right-4 top-4 z-50 flex flex-col gap-2">
+        {riskToasts.map((toast) => (
+          <div
+            key={toast.id}
+            className="flex max-w-xs flex-col gap-1 rounded-2xl border border-red-300 bg-red-600 px-4 py-3 text-white shadow-xl"
+          >
+            <p className="text-xs font-bold uppercase tracking-wide">RISIKO TINGGI TERDETEKSI</p>
+            {toast.reasons.length > 0 && (
+              <p className="text-xs opacity-90">Kata kunci: {toast.reasons.join(", ")}</p>
+            )}
+            <p className="text-xs opacity-75">Score: {toast.score}</p>
+          </div>
+        ))}
+      </div>
       <AppNavbar
         title="Session Chat"
         subtitle={sessionId}

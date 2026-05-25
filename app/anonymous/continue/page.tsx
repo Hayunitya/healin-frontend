@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAnonymousStore } from "@/store/anonymousStore";
@@ -8,10 +8,18 @@ import { findAnonymousUserById } from "@/lib/services/anonymous";
 
 export default function ContinueAnonymousPage() {
   const router = useRouter();
-  const { setAnonymousProfile } = useAnonymousStore();
+  const { profile, setAnonymousProfile } = useAnonymousStore();
   const [anonymousUserId, setAnonymousUserId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill dari localStorage jika sudah pernah login sebelumnya
+  useEffect(() => {
+    if (profile?.anonymousUserId && !anonymousUserId) {
+      setAnonymousUserId(profile.anonymousUserId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();

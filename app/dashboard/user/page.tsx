@@ -107,6 +107,12 @@ export default function UserDashboardPage() {
   useEffect(() => {
     if (!latestMatchedOpenSession) return;
     if (redirectedSessionRef.current === latestMatchedOpenSession.id) return;
+    // Only auto-redirect if the session was matched recently (within 2 minutes).
+    // This prevents redirect loops when the user navigates back from chat.
+    const matchedAt = latestMatchedOpenSession.matched_at
+      ? new Date(latestMatchedOpenSession.matched_at).getTime()
+      : 0;
+    if (Date.now() - matchedAt > 2 * 60 * 1000) return;
     redirectedSessionRef.current = latestMatchedOpenSession.id;
     router.push(`/chat/${latestMatchedOpenSession.id}?role=user`);
   }, [latestMatchedOpenSession, router]);

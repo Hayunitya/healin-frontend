@@ -9,16 +9,23 @@ import {
   adminUpdateSession,
   adminUpdateUser,
   getAdminOverview,
+  getAllCounselors,
   getAllSessions,
   getAllUsers,
+  getEscalations,
   getReports,
   markReportReviewed,
+  resolveEscalation,
+  suspendCounselor,
+  unsuspendCounselor,
+  type CounselorRecord,
+  type EscalationRecord,
   type SessionRecord,
   type SessionReport,
 } from "@/lib/services/sessions";
 import { useStaffAuthStore } from "@/store/staffAuthStore";
 
-type Tab = "overview" | "users" | "sessions" | "reports";
+type Tab = "overview" | "users" | "sessions" | "reports" | "counselors" | "escalations";
 
 interface AdminOverview {
   totalUsers: number;
@@ -43,20 +50,26 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [reports, setReports] = useState<SessionReport[]>([]);
+  const [counselors, setCounselors] = useState<CounselorRecord[]>([]);
+  const [escalations, setEscalations] = useState<EscalationRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadAll = async () => {
     setLoading(true);
-    const [o, u, s, r] = await Promise.all([
+    const [o, u, s, r, c, e] = await Promise.all([
       getAdminOverview(),
       getAllUsers(),
       getAllSessions(),
       getReports(),
+      getAllCounselors().catch(() => [] as CounselorRecord[]),
+      getEscalations().catch(() => [] as EscalationRecord[]),
     ]);
     setOverview(o as AdminOverview);
     setUsers(u as AdminUser[]);
     setSessions(s as SessionRecord[]);
     setReports(r as SessionReport[]);
+    setCounselors(c);
+    setEscalations(e);
     setLoading(false);
   };
 
@@ -90,6 +103,8 @@ export default function AdminDashboardPage() {
               ["users", "Manage Users"],
               ["sessions", "Manage Sessions"],
               ["reports", "Manage Reports"],
+              ["counselors", "Manage Counselors"],
+              ["escalations", `Escalations${escalations.length > 0 ? ` (${escalations.length})` : ""}`],
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -280,18 +295,35 @@ export default function AdminDashboardPage() {
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-gray-200 text-gray-500">
-                        <th className="py-2">ID</th>
                         <th className="py-2">Category</th>
+                        <th className="py-2 max-w-xs">Detail Laporan</th>
+                        <th className="py-2">Session</th>
                         <th className="py-2">Status</th>
                         <th className="py-2">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {reports.map((report) => (
-                        <tr key={report.id} className="border-b border-gray-100">
-                          <td className="py-2 font-mono text-xs">{report.id}</td>
-                          <td className="py-2">{report.category}</td>
-                          <td className="py-2 capitalize">{report.status}</td>
+                        <tr key={report.id} className="border-b border-gray-100 align-top">
+                          <td className="py-2 font-medium text-gray-800">{report.category}</td>
+                          <td className="py-2 max-w-xs text-sm text-gray-700 whitespace-pre-wrap">{report.detail ?? "-"}</td>
+                          <td className="py-2">
+                            {report.session_id ? (
+                              <a
+                                href={`/chat/${report.session_id}?role=counselor`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-mono text-xs text-blue-600 underline hover:text-blue-800"
+                              >
+                                {report.session_id.slice(0, 8)}…
+                              </a>
+                            ) : "-"}
+                          </td>
+                          <td className="py-2">
+                            <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${report.status === "open" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                              {report.status}
+                            </span>
+                          </td>
                           <td className="py-2">
                             <div className="flex gap-2">
                               {report.status === "open" ? (
@@ -318,6 +350,151 @@ export default function AdminDashboardPage() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+            {tab === "counselors" ? (
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900">Manage Counselors</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Aktifkan konselor baru yang menunggu persetujuan, atau suspend konselor yang melanggar.
+                </p>
+                {counselors.some((c) => !c.is_active) && (
+                  <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                    Ada {counselors.filter((c) => !c.is_active).length} konselor menunggu persetujuan.
+                  </p>
+                )}
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-gray-500">
+                        <th className="py-2">Nama</th>
+                        <th className="py-2">Email</th>
+                        <th className="py-2">Status</th>
+                        <th className="py-2">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {counselors.map((c) => (
+                        <tr key={c.id} className="border-b border-gray-100">
+                          <td className="py-2 font-medium text-gray-800">{c.name ?? c.display_name ?? "-"}</td>
+                          <td className="py-2 text-gray-600">{c.email}</td>
+                          <td className="py-2">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                c.is_active
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {c.is_active ? "Aktif" : "Tersuspensi"}
+                            </span>
+                          </td>
+                          <td className="py-2">
+                            {c.is_active ? (
+                              <button
+                                onClick={async () => {
+                                  await suspendCounselor(c.id);
+                                  await loadAll();
+                                }}
+                                className="rounded border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                              >
+                                Suspend
+                              </button>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  await unsuspendCounselor(c.id);
+                                  await loadAll();
+                                }}
+                                className="rounded border border-green-200 px-3 py-1 text-xs font-semibold text-green-700 hover:bg-green-50"
+                              >
+                                Aktifkan
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {counselors.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-sm text-gray-400">
+                            Belum ada konselor terdaftar.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+
+            {tab === "escalations" ? (
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900">Escalations</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Pesan berisiko tinggi yang belum ditangani. Prioritaskan sesi dengan status waiting.
+                </p>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-gray-500">
+                        <th className="py-2">Session</th>
+                        <th className="py-2">Status Sesi</th>
+                        <th className="py-2 max-w-xs">Isi Pesan</th>
+                        <th className="py-2">Waktu</th>
+                        <th className="py-2">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {escalations.map((esc) => (
+                        <tr key={esc.id} className="border-b border-gray-100 align-top">
+                          <td className="py-2">
+                            <a
+                              href={`/chat/${esc.session_id}?role=counselor`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-mono text-xs text-blue-600 underline hover:text-blue-800"
+                            >
+                              {esc.session_id.slice(0, 8)}...
+                            </a>
+                          </td>
+                          <td className="py-2">
+                            <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                              esc.session_status === "waiting"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-green-100 text-green-700"
+                            }`}>
+                              {esc.session_status}
+                            </span>
+                          </td>
+                          <td className="py-2 max-w-xs text-sm text-gray-700 break-words">
+                            {esc.message_body ?? "-"}
+                          </td>
+                          <td className="py-2 text-xs text-gray-500 whitespace-nowrap">
+                            {new Date(esc.created_at).toLocaleString("id-ID")}
+                          </td>
+                          <td className="py-2">
+                            <button
+                              onClick={async () => {
+                                await resolveEscalation(esc.id);
+                                await loadAll();
+                              }}
+                              className="rounded border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                            >
+                              Resolve
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {escalations.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-sm text-gray-400">
+                            Tidak ada eskalasi aktif.
+                          </td>
+                        </tr>
+                      ) : null}
                     </tbody>
                   </table>
                 </div>
